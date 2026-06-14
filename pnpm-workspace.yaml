@@ -2,6 +2,7 @@ packages:
   - artifacts/*
   - lib/*
   - lib/integrations/*
+  - packages/*
   - scripts
 
 autoInstallPeers: false
@@ -41,6 +42,7 @@ onlyBuiltDependencies:
   - unrs-resolver
 
 overrides:
+  'shell-quote': 'link:./packages/shell-quote-stub'
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-arm64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-x64': '-'
