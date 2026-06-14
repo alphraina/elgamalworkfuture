@@ -124,7 +124,7 @@ export default function MachineAnalysisModal({ machineId, machineName, onClose }
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <BarChart2 className="w-5 h-5" style={{ color: C.blue }} />
-            <span className="font-bold text-white text-sm uppercase tracking-wider">OPPO Manufacturing System</span>
+            <span className="font-bold text-white text-sm uppercase tracking-wider">Midea Manufacturing System</span>
             <span className="text-muted-foreground text-xs ml-2">— {machineName}</span>
           </div>
           {raw && (

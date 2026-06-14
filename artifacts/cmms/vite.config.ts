@@ -37,9 +37,9 @@ export default defineConfig({
       registerType: "autoUpdate",
       includeAssets: ["favicon.svg", "pwa-192.png", "pwa-512.png"],
       manifest: {
-        name: "OPPO Factory CMMS",
-        short_name: "OPPO CMMS",
-        description: "OPPO Mobile Factory Computerized Maintenance Management System",
+        name: "Midea Factory CMMS",
+        short_name: "Midea CMMS",
+        description: "Midea Mobile Factory Computerized Maintenance Management System",
         theme_color: "#0a0a0f",
         background_color: "#0a0a0f",
         display: "standalone",

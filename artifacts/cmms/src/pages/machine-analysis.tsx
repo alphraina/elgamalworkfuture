@@ -50,7 +50,7 @@ export default function MachineAnalysis() {
         src={TOOL_URL}
         className="flex-1 w-full border-0"
         allow="clipboard-write"
-        title="OPPO Machine Analysis Tool"
+        title="Midea Machine Analysis Tool"
       />
     </div>
   );

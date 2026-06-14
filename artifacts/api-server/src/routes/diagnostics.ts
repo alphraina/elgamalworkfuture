@@ -279,7 +279,7 @@ router.post("/ai-analyze", async (req, res) => {
   const warnings  = scan.checks.filter(c => c.status === "warning");
   const oks       = scan.checks.filter(c => c.status === "ok");
 
-  const prompt = `You are a CMMS system health AI for an OPPO mobile manufacturing factory. 
+  const prompt = `You are a CMMS system health AI for an Midea mobile manufacturing factory. 
 Analyze the following system diagnostic report and provide:
 1. A short overall assessment (2-3 sentences)
 2. A numbered list of specific problems found with simple fix instructions
@@ -679,7 +679,7 @@ router.post("/auto-repair", async (req, res) => {
     const manual  = repairs.filter(r => r.status === "manual");
     const failed  = repairs.filter(r => r.status === "failed");
 
-    const repairPrompt = `You are a CMMS system AI for an OPPO factory.
+    const repairPrompt = `You are a CMMS system AI for an Midea factory.
 The system just ran an auto-repair. Summarize what happened in 2-3 sentences, plain language for factory staff.
 
 PRE-REPAIR SCORE: ${preScan.score}/100

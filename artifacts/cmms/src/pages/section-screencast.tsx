@@ -570,7 +570,7 @@ const PHASE_DURATION: Record<Phase, number> = {
 };
 
 const PHASE_CAPTION: Record<Phase, string> = {
-  start: "Opening OPPO CMMS...",
+  start: "Opening Midea CMMS...",
   "moving-to-nav": "Navigating to the section...",
   "clicked-nav": "Section selected",
   browsing: "Viewing existing records in the list...",
@@ -725,7 +725,7 @@ export function SectionScreencast({ sectionKey, onClose }: Props) {
           {/* Sidebar */}
           <div className="w-[88px] flex-shrink-0 border-r border-white/[0.06] bg-[#0b0f1a] flex flex-col overflow-hidden">
             <div className="px-2 pt-2 pb-1.5 border-b border-white/[0.06]">
-              <div className="sc-chakra text-[8px] font-bold text-blue-400 leading-tight">OPPO</div>
+              <div className="sc-chakra text-[8px] font-bold text-blue-400 leading-tight">Midea</div>
               <div className="sc-chakra text-[6px] text-white/25 tracking-widest">CMMS</div>
             </div>
             <div className="flex-1 overflow-hidden py-0.5">

@@ -652,7 +652,7 @@ function SectionCard({
 export default function Help() {
   const { isAdmin } = useAuth();
   const [showVideo, setShowVideo] = useState(false);
-  const companyName = "OPPO CMMS";
+  const companyName = "Midea CMMS";
   const { roleName, sectionName } = useFactoryConfig();
 
   const visibleSections = ALL_SECTIONS.filter(s => {

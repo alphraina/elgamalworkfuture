@@ -560,7 +560,7 @@ export default function KPI() {
 
       {/* Print header (visible only in print) */}
       <div className="hidden print:block">
-        <h1 className="text-2xl font-bold">OPPO Factory CMMS — KPI Report</h1>
+        <h1 className="text-2xl font-bold">Midea Factory CMMS — KPI Report</h1>
         <p className="text-sm text-gray-600">{monthLabel} · Generated {new Date().toLocaleDateString()}</p>
       </div>
 

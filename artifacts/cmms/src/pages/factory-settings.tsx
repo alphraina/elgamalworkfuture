@@ -534,7 +534,7 @@ export default function FactorySettings() {
         </div>
         <div className="flex-1">
           <h2 className="text-lg font-display font-bold text-white leading-none">Factory Settings</h2>
-          <p className="text-xs text-muted-foreground mt-1">System configuration and admin controls for OPPO CMMS</p>
+          <p className="text-xs text-muted-foreground mt-1">System configuration and admin controls for Midea CMMS</p>
         </div>
         {showSaveBar && (
           <div className="flex items-center gap-2">

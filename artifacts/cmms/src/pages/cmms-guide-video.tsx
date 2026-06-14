@@ -414,7 +414,7 @@ export default function CmmsGuideVideo() {
               </motion.div>
               <div className="space-y-2">
                 <h1 className="text-5xl lg:text-7xl font-chakra font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
-                  OPPO Factory CMMS
+                  Midea Factory CMMS
                 </h1>
                 <p className="text-xl lg:text-2xl font-inter text-blue-400 font-medium tracking-wide">
                   Admin Complete Guide

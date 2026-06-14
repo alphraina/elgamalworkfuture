@@ -50,7 +50,7 @@ export const SECTIONS: Section[] = [
     duration: 8000,
     features: ["Admin · Manager · Team Leader", "Maintenance · Inventory roles", "Session-based auth", "Arabic / English / Chinese"],
     actions: [
-      { text: "Opening OPPO CMMS — enter your credentials to begin", showAt: 400 },
+      { text: "Opening Midea CMMS — enter your credentials to begin", showAt: 400 },
       { text: 'Typing username: "admin" — full system access', showAt: 1800 },
       { text: 'Entering password and clicking Sign In', showAt: 3400 },
       { text: "Login successful — redirecting to the factory dashboard", showAt: 5800 },

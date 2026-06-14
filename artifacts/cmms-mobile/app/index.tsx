@@ -168,7 +168,7 @@ export default function CMMSScreen() {
 
         <View style={styles.headerCenter}>
           <View style={styles.logoBadge}>
-            <Text style={styles.logoText}>OPPO</Text>
+            <Text style={styles.logoText}>Midea</Text>
           </View>
           <Text style={styles.headerTitle}>CMMS</Text>
         </View>
@@ -222,7 +222,7 @@ export default function CMMSScreen() {
         >
           <View style={styles.loadingContent}>
             <View style={styles.loadingLogo}>
-              <Text style={styles.loadingLogoText}>OPPO</Text>
+              <Text style={styles.loadingLogoText}>Midea</Text>
             </View>
             <Text style={styles.loadingTitle}>CMMS</Text>
             <Text style={styles.loadingSubtitle}>

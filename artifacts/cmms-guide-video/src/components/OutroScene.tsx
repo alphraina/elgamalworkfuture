@@ -46,7 +46,7 @@ export function OutroScene() {
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.7, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
-          OPPO CMMS
+          Midea CMMS
         </motion.h2>
 
         <motion.div
@@ -99,7 +99,7 @@ export function OutroScene() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 1.8 }}
         >
-          OPPO CMMS — Built for precision manufacturing
+          Midea CMMS — Built for precision manufacturing
         </motion.p>
       </div>
     </motion.div>

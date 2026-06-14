@@ -112,7 +112,7 @@ export default function Signup() {
           <div className="w-14 h-14 bg-primary/20 rounded-2xl flex items-center justify-center mb-3 border border-primary/50 shadow-[0_0_30px_rgba(37,99,235,0.3)] tech-border">
             <Activity className="w-7 h-7 text-primary" />
           </div>
-          <h1 className="text-3xl font-display font-bold text-white tracking-wider">OPPO <span className="text-primary">CMMS</span></h1>
+          <h1 className="text-3xl font-display font-bold text-white tracking-wider">Midea <span className="text-primary">CMMS</span></h1>
           <p className="text-muted-foreground mt-1 text-sm uppercase tracking-widest">{t("signup.title")}</p>
         </div>
 

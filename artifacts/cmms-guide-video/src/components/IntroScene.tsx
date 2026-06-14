@@ -31,7 +31,7 @@ export function IntroScene() {
       {/* Center content */}
       <div className="relative z-10 flex flex-col items-center text-center px-8">
 
-        {/* OPPO badge */}
+        {/* Midea badge */}
         <motion.div
           className="mb-6 flex items-center gap-2 rounded-full px-5 py-2"
           style={{
@@ -51,7 +51,7 @@ export function IntroScene() {
             className="text-xs font-semibold tracking-[0.2em] uppercase text-blue-400"
             style={{ fontFamily: "var(--font-mono)" }}
           >
-            OPPO Factory Management
+            Midea Factory Management
           </span>
         </motion.div>
 

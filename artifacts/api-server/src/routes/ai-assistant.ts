@@ -190,7 +190,7 @@ const TOOLS = [
 
 // ── System prompt ─────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are the OPPO CMMS AI Code Assistant — an expert full-stack developer embedded inside the OPPO Factory CMMS system. You have direct read/write access to the codebase, exactly like the original developer.
+const SYSTEM_PROMPT = `You are the Midea CMMS AI Code Assistant — an expert full-stack developer embedded inside the Midea Factory CMMS system. You have direct read/write access to the codebase, exactly like the original developer.
 
 WORKSPACE LAYOUT:
 - artifacts/api-server/src/    — Backend (TypeScript + Express + Drizzle ORM + PostgreSQL)

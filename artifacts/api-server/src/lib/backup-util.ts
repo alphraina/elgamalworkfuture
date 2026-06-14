@@ -41,7 +41,7 @@ export async function generateBackupJson(): Promise<string> {
       version: "1",
       createdAt: new Date().toISOString(),
       tables: BACKUP_TABLES,
-      generator: "OPPO CMMS Backup v1",
+      generator: "Midea CMMS Backup v1",
     },
   };
 
