@@ -241,6 +241,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   if (!user) return <>{children}</>;
 
   const visibleNav = navItems.filter(i => {
+    // Global hide by admin (applies to everyone)
+    if (config.hiddenSections?.[i.href]) return false;
+
     const sk = (i as any).sectionKey as string | undefined;
 
     if (!sk) return i.show;
@@ -295,7 +298,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="h-16 flex items-center justify-between border-b border-white/5 px-4 flex-shrink-0">
           <div className="flex items-center gap-2">
             <img src={`${import.meta.env.BASE_URL}images/oppo-logo-placeholder.png`} alt="Midea" className="w-8 h-8 rounded" />
-            <span className="font-display font-bold text-lg text-primary tracking-wider">Midea CMMS</span>
+            <span className="font-display font-bold text-lg text-primary tracking-wider">{config.systemName || "Midea CMMS"}</span>
           </div>
           <button
             className="md:hidden p-1 rounded-md text-muted-foreground hover:text-white hover:bg-white/10"
@@ -469,7 +472,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Menu className="w-5 h-5" />
             </button>
             <h1 className="font-display font-semibold text-base md:text-lg text-white capitalize truncate">
-              {orderedNav.find(i => i.href === location)?.label || "Midea CMMS"}
+              {orderedNav.find(i => i.href === location)?.label || config.systemName || "Midea CMMS"}
             </h1>
           </div>
           

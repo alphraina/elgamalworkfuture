@@ -36,6 +36,10 @@ router.get("/", async (req, res) => {
     sectionNames:          cfg.sectionNames ?? {},
     sectionPerms:          cfg.sectionPerms ?? {},
     sectionVideos:         cfg.sectionVideos ?? {},
+    hiddenSections:        cfg.hiddenSections ?? {},
+    teamNames:             cfg.teamNames ?? {},
+    systemName:            cfg.systemName ?? "",
+    factoryType:           cfg.factoryType ?? "",
     machineApiKey:         user.role === "admin" ? (cfg.machineApiKey ?? null) : undefined,
     omtpPathTemplate:      cfg.omtpPathTemplate ?? null,
     omtpColumns:           cfg.omtpColumns ?? null,
@@ -47,7 +51,7 @@ router.put("/", async (req, res) => {
   const user = await getCurrentUser(req);
   if (!user || user.role !== "admin") return res.status(403).json({ error: "Admin only" });
 
-  const { roleNames, sectionNames, sectionPerms, sectionVideos, omtpPathTemplate, omtpColumns, downtimeFailThreshold } = req.body ?? {};
+  const { roleNames, sectionNames, sectionPerms, sectionVideos, hiddenSections, teamNames, systemName, factoryType, omtpPathTemplate, omtpColumns, downtimeFailThreshold } = req.body ?? {};
 
   const threshold = typeof downtimeFailThreshold === "number" && downtimeFailThreshold >= 1
     ? Math.round(downtimeFailThreshold) : undefined;
@@ -59,6 +63,10 @@ router.put("/", async (req, res) => {
       ...(sectionNames           !== undefined ? { sectionNames }           : {}),
       ...(sectionPerms           !== undefined ? { sectionPerms }           : {}),
       ...(sectionVideos          !== undefined ? { sectionVideos }          : {}),
+      ...(hiddenSections         !== undefined ? { hiddenSections }         : {}),
+      ...(teamNames              !== undefined ? { teamNames }              : {}),
+      ...(systemName             !== undefined ? { systemName }             : {}),
+      ...(factoryType            !== undefined ? { factoryType }            : {}),
       ...(omtpPathTemplate       !== undefined ? { omtpPathTemplate }       : {}),
       ...(omtpColumns            !== undefined ? { omtpColumns }            : {}),
       ...(threshold              !== undefined ? { downtimeFailThreshold: threshold } : {}),
@@ -70,6 +78,10 @@ router.put("/", async (req, res) => {
       sectionNames:          sectionNames ?? {},
       sectionPerms:          sectionPerms ?? {},
       sectionVideos:         sectionVideos ?? {},
+      hiddenSections:        hiddenSections ?? {},
+      teamNames:             teamNames ?? {},
+      systemName:            systemName ?? "",
+      factoryType:           factoryType ?? "",
       machineApiKey:         generateApiKey(),
       omtpPathTemplate:      omtpPathTemplate ?? null,
       omtpColumns:           omtpColumns ?? null,
@@ -77,7 +89,7 @@ router.put("/", async (req, res) => {
     });
   }
 
-  const changedFields = Object.keys({ roleNames, sectionNames, sectionPerms, sectionVideos, omtpPathTemplate, omtpColumns, downtimeFailThreshold }).filter(k => (req.body ?? {})[k] !== undefined);
+  const changedFields = Object.keys({ roleNames, sectionNames, sectionPerms, sectionVideos, hiddenSections, teamNames, systemName, factoryType, omtpPathTemplate, omtpColumns, downtimeFailThreshold }).filter(k => (req.body ?? {})[k] !== undefined);
   await logAudit(user, "update", "FactoryConfig", null, "Factory Configuration", { updatedFields: changedFields });
 
   res.json({ ok: true });

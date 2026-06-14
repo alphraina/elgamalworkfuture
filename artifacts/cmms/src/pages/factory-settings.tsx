@@ -59,6 +59,42 @@ const SECTIONS = [
   { key: "kpi",             label: "KPI" },
 ] as const;
 
+const NAV_ITEMS_FOR_VISIBILITY = [
+  { href: "/dashboard",        label: "Dashboard",              protected: false },
+  { href: "/downtime",         label: "Downtime",               protected: false },
+  { href: "/inventory",        label: "Inventory",              protected: false },
+  { href: "/orders",           label: "Spare Part Orders",      protected: false },
+  { href: "/pm",               label: "Preventive Maintenance", protected: false },
+  { href: "/training",         label: "Training",               protected: false },
+  { href: "/production",       label: "Production",             protected: false },
+  { href: "/tasks",            label: "Tasks",                  protected: false },
+  { href: "/line-plans",       label: "Handover / Line Plans",  protected: false },
+  { href: "/changeover",       label: "Changeover",             protected: false },
+  { href: "/attendance",       label: "Attendance",             protected: false },
+  { href: "/vacation",         label: "Vacation",               protected: false },
+  { href: "/machines",         label: "Machine Registry",       protected: false },
+  { href: "/work-phones",      label: "Work Phones",            protected: false },
+  { href: "/broken-machines",  label: "Broken Machines",        protected: false },
+  { href: "/defects",          label: "Defects Log",            protected: false },
+  { href: "/machine-analysis", label: "Machine Analysis",       protected: false },
+  { href: "/machine-monitor",  label: "Machine Monitor",        protected: false },
+  { href: "/exams",            label: "Training Exams",         protected: false },
+  { href: "/kpi",              label: "KPI",                    protected: false },
+  { href: "/reports",          label: "Analytics & Reports",    protected: false },
+  { href: "/production-lines", label: "Production Lines",       protected: false },
+  { href: "/users",            label: "Users",                  protected: true  },
+  { href: "/audit-logs",       label: "Audit Logs",             protected: true  },
+  { href: "/factory-settings", label: "Factory Settings",       protected: true  },
+  { href: "/ai-assistant",     label: "AI Code Assistant",      protected: false },
+  { href: "/help",             label: "Help",                   protected: false },
+];
+
+const DEFAULT_TEAMS = [
+  { key: "assembly",  label: "Assembly" },
+  { key: "test",      label: "Test" },
+  { key: "packaging", label: "Packaging" },
+];
+
 type Tab = "names" | "access" | "integration" | "backup" | "diagnostics";
 
 interface DiagCheck {
@@ -386,6 +422,10 @@ export default function FactorySettings() {
   const [roleNames, setRoleNames] = useState<Record<string, string>>({});
   const [sectionNames, setSectionNames] = useState<Record<string, string>>({});
   const [sectionPerms, setSectionPerms] = useState<Record<string, Record<string, { canSee: boolean; canWrite: boolean }>>>({});
+  const [hiddenSections, setHiddenSections] = useState<Record<string, boolean>>({});
+  const [teamNames, setTeamNames] = useState<Record<string, string>>({});
+  const [systemName, setSystemName] = useState("");
+  const [factoryType, setFactoryType] = useState("");
   const [omtpPath, setOmtpPath] = useState(DEFAULT_OMTP_PATH);
   const [omtpColumns, setOmtpColumns] = useState<OmtpColumnMap>({ ...DEFAULT_OMTP_COLUMNS });
   const [rawHeaders, setRawHeaders] = useState("");
@@ -438,6 +478,10 @@ export default function FactorySettings() {
       setRoleNames(cfg.roleNames ?? {});
       setSectionNames(cfg.sectionNames ?? {});
       setSectionPerms(cfg.sectionPerms ?? {});
+      setHiddenSections(c.hiddenSections ?? {});
+      setTeamNames(c.teamNames ?? {});
+      setSystemName(c.systemName ?? "");
+      setFactoryType(c.factoryType ?? "");
       setOmtpPath(c.omtpPathTemplate ?? DEFAULT_OMTP_PATH);
       setOmtpColumns(c.omtpColumns ?? { ...DEFAULT_OMTP_COLUMNS });
       setDowntimeFailThreshold(c.downtimeFailThreshold ?? 3);
@@ -456,6 +500,7 @@ export default function FactorySettings() {
 
   const save = () => mutation.mutate({
     roleNames, sectionNames, sectionPerms,
+    hiddenSections, teamNames, systemName, factoryType,
     omtpPathTemplate: omtpPath,
     omtpColumns,
     downtimeFailThreshold,
@@ -466,6 +511,10 @@ export default function FactorySettings() {
     setRoleNames({});
     setSectionNames({});
     setSectionPerms({});
+    setHiddenSections({});
+    setTeamNames({});
+    setSystemName("");
+    setFactoryType("");
   };
 
   const getPerm = (section: string, role: string) => {
@@ -678,6 +727,177 @@ export default function FactorySettings() {
                   ))}
                 </div>
               </div>
+
+              {/* System Identity */}
+              <div className="rounded-xl border border-white/10 bg-card overflow-hidden">
+                <div className="px-5 py-4 border-b border-white/8 flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-violet-500/15 border border-violet-500/20 flex items-center justify-center flex-shrink-0">
+                    <Settings2 className="w-3.5 h-3.5 text-violet-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-white leading-none">System Identity</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">Customize the system name shown in the sidebar and browser tab</p>
+                  </div>
+                </div>
+                <div className="divide-y divide-white/5">
+                  <div className="flex items-center gap-4 px-5 py-3">
+                    <div className="w-44 flex-shrink-0">
+                      <span className="text-xs text-white font-medium">System Name</span>
+                      <p className="text-[10px] text-muted-foreground/50 mt-0.5">Shown in sidebar header</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-1">
+                      <input
+                        type="text"
+                        value={systemName}
+                        onChange={e => setSystemName(e.target.value)}
+                        placeholder='e.g. "Midea CMMS" or "Oven Factory MMS"'
+                        className="flex-1 max-w-xs bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-violet-500/50 focus:border-violet-500/40 transition-colors"
+                      />
+                      {systemName && (
+                        <button onClick={() => setSystemName("")} className="text-[10px] text-muted-foreground hover:text-white transition-colors px-2 py-1 rounded border border-white/10 hover:border-white/20 flex-shrink-0">Reset</button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 px-5 py-3">
+                    <div className="w-44 flex-shrink-0">
+                      <span className="text-xs text-white font-medium">Factory Type</span>
+                      <p className="text-[10px] text-muted-foreground/50 mt-0.5">Describe what this factory produces</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-1">
+                      <input
+                        type="text"
+                        value={factoryType}
+                        onChange={e => setFactoryType(e.target.value)}
+                        placeholder='e.g. "Oven Manufacturing", "HVAC Assembly"'
+                        className="flex-1 max-w-xs bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-violet-500/50 focus:border-violet-500/40 transition-colors"
+                      />
+                      {factoryType && (
+                        <button onClick={() => setFactoryType("")} className="text-[10px] text-muted-foreground hover:text-white transition-colors px-2 py-1 rounded border border-white/10 hover:border-white/20 flex-shrink-0">Reset</button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Team Names */}
+              <div className="rounded-xl border border-white/10 bg-card overflow-hidden">
+                <div className="px-5 py-4 border-b border-white/8 flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                    <Users2 className="w-3.5 h-3.5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-white leading-none">Team Names</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">Rename the production teams to match your factory structure</p>
+                  </div>
+                </div>
+                <div className="divide-y divide-white/5">
+                  {DEFAULT_TEAMS.map(t => (
+                    <div key={t.key} className="flex items-center gap-4 px-5 py-3">
+                      <div className="w-44 flex-shrink-0">
+                        <span className="text-xs text-white font-medium">{t.label}</span>
+                        <p className="text-[10px] text-muted-foreground/50 mt-0.5 font-mono">{t.key}</p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-1">
+                        <input
+                          type="text"
+                          value={teamNames[t.key] ?? ""}
+                          onChange={e => setTeamNames(prev => ({ ...prev, [t.key]: e.target.value }))}
+                          placeholder={`Display as "${t.label}"`}
+                          className="flex-1 max-w-xs bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/40 transition-colors"
+                        />
+                        {teamNames[t.key] && (
+                          <button
+                            onClick={() => setTeamNames(prev => { const next = { ...prev }; delete next[t.key]; return next; })}
+                            className="text-[10px] text-muted-foreground hover:text-white transition-colors px-2 py-1 rounded border border-white/10 hover:border-white/20 flex-shrink-0"
+                          >
+                            Reset
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Navigation Visibility */}
+              <div className="rounded-xl border border-white/10 bg-card overflow-hidden">
+                <div className="px-5 py-4 border-b border-white/8 flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-rose-500/15 border border-rose-500/20 flex items-center justify-center flex-shrink-0">
+                    <Eye className="w-3.5 h-3.5 text-rose-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-white leading-none">Navigation Visibility</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">Hide sections that are not relevant to this factory — affects all users</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const allHidden: Record<string, boolean> = {};
+                        NAV_ITEMS_FOR_VISIBILITY.filter(n => !n.protected).forEach(n => { allHidden[n.href] = true; });
+                        setHiddenSections(allHidden);
+                      }}
+                      className="text-[10px] text-muted-foreground hover:text-white transition-colors px-2 py-1 rounded border border-white/10 hover:border-white/20 flex-shrink-0"
+                    >
+                      Hide all
+                    </button>
+                    <button
+                      onClick={() => setHiddenSections({})}
+                      className="text-[10px] text-muted-foreground hover:text-white transition-colors px-2 py-1 rounded border border-white/10 hover:border-white/20 flex-shrink-0"
+                    >
+                      Show all
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 divide-white/5">
+                  {NAV_ITEMS_FOR_VISIBILITY.map((item, idx) => {
+                    const isVisible = !hiddenSections[item.href];
+                    const isEven = idx % 2 === 0;
+                    return (
+                      <div
+                        key={item.href}
+                        className={`flex items-center gap-3 px-5 py-3 border-white/5 ${
+                          Math.floor(idx / 2) < Math.floor(NAV_ITEMS_FOR_VISIBILITY.length / 2)
+                            ? "sm:border-b"
+                            : ""
+                        } ${isEven ? "sm:border-r" : ""}`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <span className={`text-xs font-medium ${item.protected ? "text-muted-foreground/60" : isVisible ? "text-white" : "text-muted-foreground/50 line-through"}`}>
+                            {item.label}
+                          </span>
+                          {item.protected && (
+                            <span className="ml-2 text-[9px] text-amber-400/70 uppercase tracking-wider font-semibold">locked</span>
+                          )}
+                        </div>
+                        {item.protected ? (
+                          <div className="flex items-center gap-1.5 flex-shrink-0 opacity-40">
+                            <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="text-[10px] text-muted-foreground">Always shown</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {isVisible
+                              ? <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                              : <EyeOff className="w-3.5 h-3.5 text-muted-foreground/40" />
+                            }
+                            <Toggle
+                              checked={isVisible}
+                              onChange={val => setHiddenSections(prev => {
+                                const next = { ...prev };
+                                if (val) delete next[item.href];
+                                else next[item.href] = true;
+                                return next;
+                              })}
+                              color={isVisible ? "green" : "blue"}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
             </div>
           )}
 

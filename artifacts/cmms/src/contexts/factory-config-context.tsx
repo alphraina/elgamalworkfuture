@@ -14,10 +14,24 @@ export interface FactoryConfig {
   sectionNames: Record<string, string>;
   sectionPerms: Record<string, Record<string, SectionPerm>>;
   sectionVideos: Record<string, string>;
+  hiddenSections: Record<string, boolean>;
+  teamNames: Record<string, string>;
+  systemName: string;
+  factoryType: string;
   downtimeFailThreshold?: number;
 }
 
-const DEFAULT_CONFIG: FactoryConfig = { roleNames: {}, sectionNames: {}, sectionPerms: {}, sectionVideos: {}, downtimeFailThreshold: 3 };
+const DEFAULT_CONFIG: FactoryConfig = {
+  roleNames: {},
+  sectionNames: {},
+  sectionPerms: {},
+  sectionVideos: {},
+  hiddenSections: {},
+  teamNames: {},
+  systemName: "",
+  factoryType: "",
+  downtimeFailThreshold: 3,
+};
 
 const FactoryConfigContext = createContext<{
   config: FactoryConfig;
@@ -26,6 +40,8 @@ const FactoryConfigContext = createContext<{
   roleName: (role: string) => string;
   sectionName: (section: string, fallback: string) => string;
   sectionVideo: (section: string) => string | null;
+  isHidden: (href: string) => boolean;
+  teamName: (key: string, fallback: string) => string;
   reload: () => void;
 }>({
   config: DEFAULT_CONFIG,
@@ -34,6 +50,8 @@ const FactoryConfigContext = createContext<{
   roleName: (r) => r,
   sectionName: (_s, f) => f,
   sectionVideo: () => null,
+  isHidden: () => false,
+  teamName: (_k, f) => f,
   reload: () => {},
 });
 
@@ -78,12 +96,20 @@ export function FactoryConfigProvider({ children }: { children: React.ReactNode 
     return data.sectionVideos?.[section] ?? null;
   }, [data]);
 
+  const isHidden = useCallback((href: string): boolean => {
+    return data.hiddenSections?.[href] === true;
+  }, [data]);
+
+  const teamName = useCallback((key: string, fallback: string): string => {
+    return data.teamNames?.[key] || fallback;
+  }, [data]);
+
   const reload = useCallback(() => {
     qc.invalidateQueries({ queryKey: ["factory-config"] });
   }, [qc]);
 
   return (
-    <FactoryConfigContext.Provider value={{ config: data, canSee, canWrite, roleName, sectionName, sectionVideo, reload }}>
+    <FactoryConfigContext.Provider value={{ config: data, canSee, canWrite, roleName, sectionName, sectionVideo, isHidden, teamName, reload }}>
       {children}
     </FactoryConfigContext.Provider>
   );
