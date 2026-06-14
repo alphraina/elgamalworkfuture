@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OPPO Factory CMMS — Documentation</title>
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #1a1a1a;
+    --border: #222222;
+    --text: #e2e8f0;
+    --muted: #6b7280;
+    --primary: #3b82f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .page { max-width: 700px; margin: 0 auto; padding: 40px 20px 80px; }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 48px; }
+  .header-logo {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: #1a1a1a; border: 1px solid #2a2a2a;
+    border-radius: 14px; padding: 10px 18px; margin-bottom: 24px;
+  }
+  .header-logo-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .header-logo-text { font-size: 15px; font-weight: 600; color: #fff; }
+  .header h1 { font-size: 30px; font-weight: 700; color: #fff; margin-bottom: 10px; }
+  .header p { font-size: 15px; color: var(--muted); max-width: 480px; margin: 0 auto 20px; line-height: 1.6; }
+  .header-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #1a1a1a; border: 1px solid #2a2a2a;
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 12px; color: var(--muted);
+  }
+  .pill-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+  /* Section group */
+  .section-group { margin-bottom: 32px; }
+  .section-label {
+    display: flex; align-items: center; gap-8px;
+    gap: 8px;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .section-label svg { opacity: 0.6; }
+
+  /* Accordion */
+  .accordion-list { display: flex; flex-direction: column; gap: 0; }
+  .accordion-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .accordion-item.open { border-color: #2d2d2d; }
+
+  .accordion-trigger {
+    width: 100%; display: flex; align-items: center; gap: 14px;
+    padding: 16px 18px; cursor: pointer;
+    background: none; border: none; text-align: left;
+    transition: background 0.15s;
+  }
+  .accordion-trigger:hover { background: rgba(255,255,255,0.03); }
+
+  .acc-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .acc-title { flex: 1; font-size: 15px; font-weight: 500; color: #fff; }
+  .acc-chevron {
+    width: 18px; height: 18px; color: var(--muted);
+    transition: transform 0.2s; flex-shrink: 0;
+  }
+  .accordion-item.open .acc-chevron { transform: rotate(90deg); }
+
+  .accordion-body {
+    display: none;
+    padding: 0 18px 18px;
+    border-top: 1px solid var(--border);
+  }
+  .accordion-body.visible { display: block; }
+  .accordion-body-inner { padding-top: 16px; }
+
+  /* Content styles inside accordion */
+  .acc-desc { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 14px; }
+  .acc-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .acc-list li {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 13px; color: #cbd5e1; line-height: 1.5;
+  }
+  .acc-list li::before {
+    content: ''; width: 5px; height: 5px; border-radius: 50%;
+    background: #3b82f6; flex-shrink: 0; margin-top: 7px;
+  }
+  .acc-list li strong { color: #fff; }
+
+  .acc-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+  .acc-table thead tr { background: #1a1a1a; }
+  .acc-table th {
+    text-align: left; padding: 8px 12px; color: var(--muted);
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+  }
+  .acc-table td {
+    padding: 8px 12px; border-bottom: 1px solid #1a1a1a;
+    color: #cbd5e1; vertical-align: top;
+  }
+  .acc-table tr:last-child td { border-bottom: none; }
+
+  .badge {
+    display: inline-flex; align-items: center;
+    padding: 2px 7px; border-radius: 20px;
+    font-size: 10px; font-weight: 600;
+  }
+  .badge-blue { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .badge-green { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .badge-red { background: rgba(239,68,68,0.15); color: #f87171; }
+  .badge-amber { background: rgba(245,158,11,0.15); color: #fbbf24; }
+  .badge-purple { background: rgba(168,85,247,0.15); color: #c084fc; }
+  .badge-gray { background: rgba(148,163,184,0.1); color: var(--muted); }
+
+  code {
+    background: #1e1e1e; border: 1px solid #2a2a2a;
+    border-radius: 4px; padding: 1px 6px;
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 12px; color: #93c5fd;
+  }
+  pre {
+    background: #141414; border: 1px solid #222;
+    border-radius: 10px; padding: 14px 16px;
+    overflow-x: auto;
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 12px; line-height: 1.7; color: #e2e8f0;
+    margin-top: 10px;
+  }
+
+  .alert {
+    border-radius: 8px; padding: 10px 14px;
+    font-size: 12px; margin-top: 12px;
+    border-left: 3px solid;
+  }
+  .alert-info { background: rgba(59,130,246,0.08); border-color: #3b82f6; color: #93c5fd; }
+  .alert-warning { background: rgba(245,158,11,0.08); border-color: #f59e0b; color: #fbbf24; }
+  .alert-success { background: rgba(34,197,94,0.08); border-color: #22c55e; color: #4ade80; }
+
+  .step-list { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+  .step { display: flex; gap: 12px; }
+  .step-num {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3);
+    color: #60a5fa; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; margin-top: 1px;
+  }
+  .step-body h4 { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+  .step-body p { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+
+  .check { color: #4ade80; font-weight: 700; }
+  .partial { color: #fbbf24; font-size: 11px; }
+  .cross { color: #374151; }
+
+  .mini-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .mini-card {
+    background: #141414; border: 1px solid #222;
+    border-radius: 10px; padding: 12px;
+  }
+  .mini-card h4 { font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+  .mini-card p { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+  h3.acc-heading {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; color: var(--muted); margin: 14px 0 8px;
+  }
+
+  @media (max-width: 600px) {
+    .mini-cards { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logo">
+      <div class="header-logo-icon">📱</div>
+      <span class="header-logo-text">OPPO Factory CMMS</span>
+    </div>
+    <h1>System Documentation</h1>
+    <p>Full-featured Computerized Maintenance Management System for OPPO's mobile phone manufacturing factory.</p>
+    <div class="header-pills">
+      <span class="pill"><span class="pill-dot" style="background:#22c55e"></span>Production Ready</span>
+      <span class="pill"><span class="pill-dot" style="background:#3b82f6"></span>5 Roles</span>
+      <span class="pill"><span class="pill-dot" style="background:#3b82f6"></span>3 Teams</span>
+      <span class="pill"><span class="pill-dot" style="background:#f59e0b"></span>EN / AR / ZH</span>
+      <span class="pill"><span class="pill-dot" style="background:#22c55e"></span>PWA + Mobile APK</span>
+    </div>
+  </div>
+
+  <!-- ALL FEATURES -->
+  <div class="section-group">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      ALL FEATURES
+    </div>
+    <div class="accordion-list">
+
+      <!-- Overview -->
+      <div class="accordion-item" id="item-overview">
+        <button class="accordion-trigger" onclick="toggle('item-overview')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e3a5f,#1e4070);">🏭</span>
+          <span class="acc-title">System Overview</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">A comprehensive web + mobile application that centralizes all maintenance and production operations for a mobile phone manufacturing factory. It handles three production teams — Assembly, Test, and Packaging — across 8 production lines, with full role-based access control, real-time notifications, multilanguage support, and a mobile app wrapper.</p>
+            <div class="mini-cards">
+              <div class="mini-card"><h4>👤 5 User Roles</h4><p>Admin, Manager, Team Leader, Maintenance Tech, Inventory — each with specific permissions.</p></div>
+              <div class="mini-card"><h4>🏗️ 8 Production Lines</h4><p>Assembly (8 lines), Test (8 lines), Packaging (8 lines) — tracked hourly.</p></div>
+              <div class="mini-card"><h4>🌐 3 Languages</h4><p>English, Arabic (RTL), and Chinese — switchable at runtime without reload.</p></div>
+              <div class="mini-card"><h4>📱 PWA + APK</h4><p>Works as a web app, installable PWA, or native Android APK via Expo.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Roles & Permissions -->
+      <div class="accordion-item" id="item-roles">
+        <button class="accordion-trigger" onclick="toggle('item-roles')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#3b1e5f,#5b2d8f);">🔐</span>
+          <span class="acc-title">Roles & Access Control</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <div class="mini-cards">
+              <div class="mini-card"><h4>🔴 Admin</h4><p>Full access. Manages users, approves registrations, audit logs, system settings.</p></div>
+              <div class="mini-card"><h4>🔵 Manager</h4><p>Cross-team operations. Creates tasks, approves vacation, views KPI and analysis.</p></div>
+              <div class="mini-card"><h4>🟢 Team Leader</h4><p>Manages own team. Line plans, production, task assignment, vacation approval.</p></div>
+              <div class="mini-card"><h4>🟡 Maintenance</h4><p>Downtime, broken machines, spare parts orders, PM tasks, training exams.</p></div>
+            </div>
+            <div class="mini-card" style="margin-top:8px;"><h4>🟣 Inventory</h4><p>Manages spare parts catalog and approves spare part orders. Work phone station. No exams or machine analysis access.</p></div>
+            <h3 class="acc-heading" style="margin-top:16px;">Feature Access Matrix</h3>
+            <div style="overflow-x:auto;">
+            <table class="acc-table">
+              <thead><tr><th>Feature</th><th>Admin</th><th>Manager</th><th>Tm Leader</th><th>Maint.</th><th>Inventory</th></tr></thead>
+              <tbody>
+                <tr><td>Dashboard</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+                <tr><td>Production Capacity</td><td class="check">✓</td><td class="check">✓</td><td class="partial">Team only</td><td class="check">✓</td><td class="cross">—</td></tr>
+                <tr><td>Downtime Recording</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="cross">—</td></tr>
+                <tr><td>Broken Machines</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="cross">—</td></tr>
+                <tr><td>Preventive Maintenance</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="cross">—</td></tr>
+                <tr><td>Inventory / Spare Parts</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+                <tr><td>Spare Part Orders</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="partial">Approve only</td></tr>
+                <tr><td>Tasks</td><td class="check">✓</td><td class="check">✓</td><td class="partial">Team only</td><td class="partial">View/complete</td><td class="cross">—</td></tr>
+                <tr><td>Line Plans</td><td class="check">✓</td><td class="check">✓</td><td class="partial">Team only</td><td class="partial">View</td><td class="cross">—</td></tr>
+                <tr><td>Attendance</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+                <tr><td>Vacation Requests</td><td class="check">✓</td><td class="check">✓</td><td class="partial">Team only</td><td class="partial">Own</td><td class="partial">Own</td></tr>
+                <tr><td>Machine Registry</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="cross">—</td></tr>
+                <tr><td>Work Phone Station</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+                <tr><td>Machine Analysis</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="cross">—</td></tr>
+                <tr><td>Training Plans</td><td class="check">✓</td><td class="check">✓</td><td class="partial">Team only</td><td class="partial">Own</td><td class="cross">—</td></tr>
+                <tr><td>Training Exams</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="cross">—</td></tr>
+                <tr><td>KPI Reports</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="cross">—</td><td class="cross">—</td></tr>
+                <tr><td>Announcements</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="partial">Read</td><td class="partial">Read</td></tr>
+                <tr><td>User Management</td><td class="check">✓</td><td class="cross">—</td><td class="cross">—</td><td class="cross">—</td><td class="cross">—</td></tr>
+                <tr><td>Audit Logs</td><td class="check">✓</td><td class="cross">—</td><td class="cross">—</td><td class="cross">—</td><td class="cross">—</td></tr>
+                <tr><td>System Settings</td><td class="check">✓</td><td class="cross">—</td><td class="cross">—</td><td class="cross">—</td><td class="cross">—</td></tr>
+              </tbody>
+            </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard -->
+      <div class="accordion-item" id="item-dashboard">
+        <button class="accordion-trigger" onclick="toggle('item-dashboard')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e3a5f,#1e5070);">📊</span>
+          <span class="acc-title">Dashboard</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">High-level operational overview tailored to the logged-in user's role.</p>
+            <ul class="acc-list">
+              <li>Live counts for open downtime incidents, pending tasks, active broken machines</li>
+              <li>Spare part orders awaiting approval</li>
+              <li>Upcoming preventive maintenance (next 7 days)</li>
+              <li>Recent announcements from management</li>
+              <li>Quick navigation tiles to the most common actions for that role</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Downtime -->
+      <div class="accordion-item" id="item-downtime">
+        <button class="accordion-trigger" onclick="toggle('item-downtime')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#5f1e1e,#8f2d2d);">⏱️</span>
+          <span class="acc-title">Downtime Records</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Log every machine stoppage with full details for root cause analysis and reporting.</p>
+            <ul class="acc-list">
+              <li><strong>Fields:</strong> Machine name, machine code (scanned via QR), start time, end time, category (mechanical, electrical, software, other), root cause, resolution note, production line, shift</li>
+              <li>Duration is calculated automatically from start/end time</li>
+              <li>Public reports from unauthenticated users shown with amber "Public Report" badge</li>
+              <li>Filterable by date, shift, category, team, or machine</li>
+              <li>Audit logged on every create/update</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Broken Machines -->
+      <div class="accordion-item" id="item-broken">
+        <button class="accordion-trigger" onclick="toggle('item-broken')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#5f3a1e,#8f5a2d);">🔧</span>
+          <span class="acc-title">Broken Machine Recorder</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Track machine breakdowns through their full lifecycle — from report to resolution.</p>
+            <ul class="acc-list">
+              <li><strong>Create:</strong> Machine name/code, description, priority (low/medium/high/critical), team, line</li>
+              <li><strong>Assignment:</strong> Assign to a specific maintenance technician</li>
+              <li><strong>Status tracking:</strong> Open → In Progress → Resolved → Closed</li>
+              <li>Resolution notes added when closing; color-coded priority badges</li>
+              <li>Filterable by status, team, and date</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preventive Maintenance -->
+      <div class="accordion-item" id="item-pm">
+        <button class="accordion-trigger" onclick="toggle('item-pm')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e3f5f,#2d5f8f);">🗓️</span>
+          <span class="acc-title">Preventive Maintenance</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Schedule and track recurring maintenance tasks to prevent breakdowns. Displayed in a monthly calendar view.</p>
+            <ul class="acc-list">
+              <li><strong>Plan fields:</strong> Machine, task description, frequency (daily/weekly/monthly/quarterly), assigned technician, next due date</li>
+              <li>Monthly calendar view — tasks appear on their due date, color-coded by status</li>
+              <li>Click any day to see full task details in a panel below</li>
+              <li>Overdue tasks highlighted in red; completed in green</li>
+              <li>Filter by team and status</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inventory -->
+      <div class="accordion-item" id="item-inventory">
+        <button class="accordion-trigger" onclick="toggle('item-inventory')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e5f3a,#2d8f5a);">📦</span>
+          <span class="acc-title">Inventory</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Complete spare parts catalog managed by the inventory team.</p>
+            <ul class="acc-list">
+              <li><strong>Fields:</strong> Part name, part number, category, quantity in stock, minimum stock level, unit, location, price</li>
+              <li><strong>Low stock alerts:</strong> Parts below minimum level are flagged</li>
+              <li><strong>Excel import/export:</strong> Bulk import from spreadsheet; export current catalog</li>
+              <li><strong>QR codes:</strong> Each part displays a QR code for quick scanning</li>
+              <li>Full audit trail of all stock changes</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spare Part Orders -->
+      <div class="accordion-item" id="item-spareparts">
+        <button class="accordion-trigger" onclick="toggle('item-spareparts')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#5f4a1e,#8f6a2d);">🛒</span>
+          <span class="acc-title">Spare Part Orders</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Maintenance technicians request parts; inventory/admin team approves and fulfills.</p>
+            <ul class="acc-list">
+              <li>Maintenance creates an order request (part, quantity, urgency, reason)</li>
+              <li>Inventory or admin approves/rejects with a note</li>
+              <li>On approval, quantity is deducted from stock automatically</li>
+              <li>Status flow: Pending → Approved / Rejected → Fulfilled</li>
+              <li>Notifications sent to the requester on status change</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tasks -->
+      <div class="accordion-item" id="item-tasks">
+        <button class="accordion-trigger" onclick="toggle('item-tasks')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e5f5a,#2d8f85);">✅</span>
+          <span class="acc-title">Tasks</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Work-order style task management with assignments and notifications.</p>
+            <ul class="acc-list">
+              <li><strong>Create:</strong> Title, description, priority (low/normal/high/critical), assignee, due date</li>
+              <li>Assigned user receives an in-app notification</li>
+              <li><strong>Status:</strong> Pending → In Progress → Completed; completion note required</li>
+              <li>Team leaders only see tasks belonging to their team</li>
+              <li>Color-coded priority; overdue tasks highlighted</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Line Plans -->
+      <div class="accordion-item" id="item-lineplans">
+        <button class="accordion-trigger" onclick="toggle('item-lineplans')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#2a1e5f,#3d2d8f);">📋</span>
+          <span class="acc-title">Line Plans</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Daily shift planning for production lines — team leaders define who works on which line each day.</p>
+            <ul class="acc-list">
+              <li>Select date, line, shift (day/night/morning/afternoon)</li>
+              <li>Assign operators to the line for that shift</li>
+              <li>View plans for the current week; switch between days</li>
+              <li>Team leaders can only plan for their own team's lines</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attendance -->
+      <div class="accordion-item" id="item-attendance">
+        <button class="accordion-trigger" onclick="toggle('item-attendance')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e4f5f,#2d6f8f);">📅</span>
+          <span class="acc-title">Attendance</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Daily attendance tracking for all factory staff with automatic absent marking.</p>
+            <ul class="acc-list">
+              <li><strong>Record:</strong> Mark present/absent/late/half-day with check-in and check-out times</li>
+              <li><strong>Shifts:</strong> Day, Night, Morning, Afternoon — each with configurable start time and max check-in window</li>
+              <li><strong>Auto-absent:</strong> System automatically marks absent/leave 30 min after each shift's max check-in time — no manual action needed</li>
+              <li><strong>Auto-leave:</strong> Users with approved vacation are automatically marked as Leave</li>
+              <li><strong>Auto-cleanup:</strong> Attendance records older than 3 days are deleted automatically</li>
+              <li>Data feeds into KPI attendance score (35% weight)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vacation -->
+      <div class="accordion-item" id="item-vacation">
+        <button class="accordion-trigger" onclick="toggle('item-vacation')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e5f2a,#2d8f4d);">🏖️</span>
+          <span class="acc-title">Vacation Requests</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Employee self-service leave management with an approval workflow.</p>
+            <ul class="acc-list">
+              <li>Employee submits: start date, end date, reason</li>
+              <li>Manager or team leader reviews and approves/rejects with a note</li>
+              <li>Employee receives a notification on decision</li>
+              <li>Approved leave is reflected in attendance records</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Machine Registry -->
+      <div class="accordion-item" id="item-machines">
+        <button class="accordion-trigger" onclick="toggle('item-machines')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#3a3a1e,#5a5a2d);">🔩</span>
+          <span class="acc-title">Machine Registry</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Central database of all factory machines with QR code tracking.</p>
+            <ul class="acc-list">
+              <li><strong>Fields:</strong> Machine name, code (unique), model, manufacturer, location, production line, team, status (active/inactive/under maintenance)</li>
+              <li><strong>QR Code:</strong> Each machine has a printable QR code — scan from downtime or broken machine forms to auto-fill</li>
+              <li><strong>Excel import/export:</strong> Bulk upload machines from spreadsheet</li>
+              <li>Filters by team, status, and line; full audit trail</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Work Phone Station -->
+      <div class="accordion-item" id="item-phones">
+        <button class="accordion-trigger" onclick="toggle('item-phones')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#3f1e5f,#5f2d8f);">📱</span>
+          <span class="acc-title">Work Phone Station</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Track which work phone and PCBA board is assigned to each employee.</p>
+            <ul class="acc-list">
+              <li><strong>Fields:</strong> Work ID, employee name, phone color, phone number / IMEI, PCBA number</li>
+              <li>PCBA number can be scanned using the device camera in-browser</li>
+              <li><strong>Export Excel:</strong> Download current filtered view as .xlsx</li>
+              <li><strong>Import Excel:</strong> Upload a spreadsheet to bulk-import with live preview and validation</li>
+              <li>Colors: Black, White, Blue, Green, Red, Gold, Silver, Purple, Pink, Orange, Brown</li>
+            </ul>
+            <h3 class="acc-heading">Excel Column Format</h3>
+            <table class="acc-table">
+              <thead><tr><th>Column</th><th>Required</th><th>Notes</th></tr></thead>
+              <tbody>
+                <tr><td><code>Work ID</code></td><td><span class="badge badge-red">Required</span></td><td>Employee work ID</td></tr>
+                <tr><td><code>Name</code></td><td><span class="badge badge-red">Required</span></td><td>Full name</td></tr>
+                <tr><td><code>Phone Color</code></td><td><span class="badge badge-gray">Optional</span></td><td>Lowercase (e.g. black)</td></tr>
+                <tr><td><code>Phone Number</code></td><td><span class="badge badge-gray">Optional</span></td><td>Number or IMEI</td></tr>
+                <tr><td><code>PCBA Number</code></td><td><span class="badge badge-gray">Optional</span></td><td>Board serial / QR value</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Machine Analysis -->
+      <div class="accordion-item" id="item-analysis">
+        <button class="accordion-trigger" onclick="toggle('item-analysis')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e3f3f,#2d5f5f);">📈</span>
+          <span class="acc-title">Machine Analysis</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Advanced analytics engine for machine performance — upload test data CSVs and get instant insights.</p>
+            <ul class="acc-list">
+              <li><strong>Metrics:</strong> OEE, FPY (First Pass Yield), Pass / Retest / Escape rates, Average Cycle Time</li>
+              <li><strong>Machine ranking:</strong> Risk score with CRITICAL / WARNING / GOOD classification</li>
+              <li><strong>AI anomaly detection:</strong> Flags machines with unusual failure patterns</li>
+              <li><strong>Charts:</strong> Failure frequency, Pareto, Escape rate trend, Cycle time distribution, OEE breakdown, Radar chart</li>
+              <li>CSV report download; paginated raw dataset viewer</li>
+            </ul>
+            <div class="alert alert-warning">Inventory role does not have access to Machine Analysis.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Training Plans -->
+      <div class="accordion-item" id="item-training">
+        <button class="accordion-trigger" onclick="toggle('item-training')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e4a3f,#2d6a5f);">📚</span>
+          <span class="acc-title">Training Plans</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Schedule and manage training sessions for factory staff.</p>
+            <ul class="acc-list">
+              <li><strong>Create plan:</strong> Title, description, trainer, date/time, duration, team (or all), participants list</li>
+              <li>Team leaders only see plans for their team</li>
+              <li>Participants notified when added to a training plan</li>
+              <li><strong>Status:</strong> Scheduled → In Progress → Completed / Cancelled</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Training Exams -->
+      <div class="accordion-item" id="item-exams">
+        <button class="accordion-trigger" onclick="toggle('item-exams')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#3f2a1e,#5f3d2d);">📝</span>
+          <span class="acc-title">Training Exams</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Create quizzes linked to training plans; record and grade employee results.</p>
+            <ul class="acc-list">
+              <li><strong>Create exam:</strong> Title, linked training, multiple-choice questions, passing score, time limit</li>
+              <li>Employees answer questions within the time limit</li>
+              <li><strong>Grading:</strong> Automatic scoring; admin/manager can override grades</li>
+              <li>Pass/fail status with score %; detailed answer breakdown per question</li>
+              <li>Full exam history per employee</li>
+            </ul>
+            <div class="alert alert-warning">Inventory role does not have access to Training Exams.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Reports -->
+      <div class="accordion-item" id="item-kpi">
+        <button class="accordion-trigger" onclick="toggle('item-kpi')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e3a5f,#2d5080);">📉</span>
+          <span class="acc-title">KPI Reports</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Monthly performance scoring for every employee based on three weighted metrics.</p>
+            <table class="acc-table" style="margin-bottom:12px;">
+              <thead><tr><th>Metric</th><th>Weight</th><th>Calculation</th></tr></thead>
+              <tbody>
+                <tr><td>Attendance</td><td><span class="badge badge-blue">35%</span></td><td>Present days ÷ working days</td></tr>
+                <tr><td>Punctuality</td><td><span class="badge badge-blue">15%</span></td><td>On-time check-ins ÷ total check-ins</td></tr>
+                <tr><td>Task Completion</td><td><span class="badge badge-blue">50%</span></td><td>Completed tasks ÷ assigned tasks</td></tr>
+              </tbody>
+            </table>
+            <ul class="acc-list">
+              <li>Color-coded: green (≥80%) / amber (60–79%) / red (&lt;60%)</li>
+              <li>Click any employee row to open detail modal with metric breakdown</li>
+              <li>Filter by month, role, and team; export to CSV</li>
+              <li>KPI weight thresholds are configurable by admin</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Announcements -->
+      <div class="accordion-item" id="item-announcements">
+        <button class="accordion-trigger" onclick="toggle('item-announcements')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#5f3a1e,#8f5a2d);">📢</span>
+          <span class="acc-title">Announcements</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Broadcast messages from management to all or selected staff.</p>
+            <ul class="acc-list">
+              <li>Create: title, message body, priority (info / warning / critical), active/inactive toggle</li>
+              <li>Priority levels use different color coding (blue / amber / red)</li>
+              <li>Inactive announcements hidden from staff but editable by admin/manager</li>
+              <li>Pinned at the top of the dashboard for all roles</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications -->
+      <div class="accordion-item" id="item-notifications">
+        <button class="accordion-trigger" onclick="toggle('item-notifications')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#4a1e5f,#6a2d8f);">🔔</span>
+          <span class="acc-title">Notifications</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Real-time in-app notification system plus optional push notifications for mobile users.</p>
+            <ul class="acc-list">
+              <li>Bell icon in header shows unread count</li>
+              <li>Triggered by: task assignments, vacation decisions, spare part order status, PM due dates, training additions</li>
+              <li><strong>Push notifications:</strong> Mobile app receives push notifications via Expo Push Notifications — users must grant permission</li>
+              <li>Mark individual or all notifications as read</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- User Management -->
+      <div class="accordion-item" id="item-users">
+        <button class="accordion-trigger" onclick="toggle('item-users')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e5f4a,#2d8f6a);">👤</span>
+          <span class="acc-title">User Management</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Admin-only user administration panel with self-registration approval workflow.</p>
+            <ul class="acc-list">
+              <li><strong>Create user:</strong> Username, full name, password, role, team assignment, shift</li>
+              <li><strong>Edit user:</strong> Change name, password, role, team, shift, extra roles</li>
+              <li><strong>Pending approvals tab:</strong> Review self-registered users; assign role and team before approving or rejecting</li>
+              <li><strong>Extra roles:</strong> A user can hold a secondary role in addition to their primary role</li>
+            </ul>
+            <div class="alert alert-info">The admin account cannot be deleted or have its role changed — it is permanently locked.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Audit Logs -->
+      <div class="accordion-item" id="item-audit">
+        <button class="accordion-trigger" onclick="toggle('item-audit')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#2a3a1e,#3d5a2d);">🛡️</span>
+          <span class="acc-title">Audit Logs</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">Tamper-visible log of every significant system action — admin-only.</p>
+            <ul class="acc-list">
+              <li>Tracks: create, update, delete actions across all modules</li>
+              <li>Each entry: timestamp, actor, action type, entity type, entity ID, entity label, change diff (before/after)</li>
+              <li>Filter by action type, entity type, date range, or actor</li>
+              <li>Expandable diff view shows exactly what changed</li>
+              <li>Admin can clear all logs (irreversible)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Settings -->
+      <div class="accordion-item" id="item-settings">
+        <button class="accordion-trigger" onclick="toggle('item-settings')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#3a3a3a,#4a4a4a);">⚙️</span>
+          <span class="acc-title">System Settings</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <h3 class="acc-heading">Site Settings</h3>
+            <ul class="acc-list">
+              <li>Toggle user self-registration (allow/block new users registering themselves)</li>
+              <li>Toggle public downtime reporting (allow unauthenticated machine issue reporting from login page)</li>
+            </ul>
+            <h3 class="acc-heading">Shift Settings</h3>
+            <ul class="acc-list">
+              <li>Configure start time and max check-in window for Day and Night shifts</li>
+              <li>Format: 24-hour (HH:MM) — e.g. Day shift starts 08:00, max check-in until 09:00</li>
+              <li>Auto-absent scheduler runs 30 min after each shift's max check-in time</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Public Downtime -->
+      <div class="accordion-item" id="item-public">
+        <button class="accordion-trigger" onclick="toggle('item-public')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e4f3f,#2d6f5f);">🌐</span>
+          <span class="acc-title">Public Downtime Reporting</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">When enabled by admin, any factory worker can report a machine issue without logging in.</p>
+            <ul class="acc-list">
+              <li>Fields: name, team, machine name, machine QR code/ID (optional), description, production line</li>
+              <li>Reports appear in Downtime Records with a Public Report badge</li>
+              <li>Multilanguage: English / Arabic / Chinese</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile App -->
+      <div class="accordion-item" id="item-mobile">
+        <button class="accordion-trigger" onclick="toggle('item-mobile')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e3f5a,#2d5f8a);">📲</span>
+          <span class="acc-title">Mobile App</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">A React Native (Expo) wrapper that packages the full CMMS as a native Android app.</p>
+            <ul class="acc-list">
+              <li>WebView-based wrapper pointing to the API server</li>
+              <li>Push notifications via Expo Push Notification service</li>
+              <li>Camera access for QR code scanning</li>
+              <li>File access for Excel upload/download</li>
+              <li>Build APK: <code>eas build -p android --profile preview</code> (requires EAS account)</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- i18n -->
+      <div class="accordion-item" id="item-i18n">
+        <button class="accordion-trigger" onclick="toggle('item-i18n')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e3a5f,#3a1e5f);">🌍</span>
+          <span class="acc-title">Multilanguage (EN / AR / ZH)</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">The entire interface switches between three languages at runtime with no page reload.</p>
+            <ul class="acc-list">
+              <li><strong>English (EN)</strong> — default left-to-right layout</li>
+              <li><strong>Arabic (AR)</strong> — full right-to-left (RTL) layout flip; all icons, spacing, and alignment mirror automatically</li>
+              <li><strong>Chinese (ZH)</strong> — Simplified Chinese</li>
+            </ul>
+            <p style="font-size:12px;color:var(--muted);margin-top:10px;">Click the language toggle button in the header to cycle: EN → AR → ZH → EN. Preference stored in localStorage and persists across sessions.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SETUP GUIDE -->
+  <div class="section-group">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      SETUP GUIDE
+    </div>
+    <div class="accordion-list">
+
+      <div class="accordion-item" id="item-techstack">
+        <button class="accordion-trigger" onclick="toggle('item-techstack')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e3a3a,#2d5a5a);">🛠️</span>
+          <span class="acc-title">Tech Stack</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <table class="acc-table">
+              <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Monorepo</strong></td><td>pnpm workspaces</td></tr>
+                <tr><td><strong>Runtime</strong></td><td>Node.js 24, TypeScript 5.9</td></tr>
+                <tr><td><strong>Frontend</strong></td><td>React 19, Vite 7, TailwindCSS, shadcn/ui, Framer Motion, Recharts, Lucide Icons</td></tr>
+                <tr><td><strong>Backend</strong></td><td>Express 5, TypeScript</td></tr>
+                <tr><td><strong>Database</strong></td><td>PostgreSQL + Drizzle ORM</td></tr>
+                <tr><td><strong>Auth</strong></td><td>Express session cookies, scrypt password hashing</td></tr>
+                <tr><td><strong>Validation</strong></td><td>Zod v4, drizzle-zod</td></tr>
+                <tr><td><strong>API Codegen</strong></td><td>Orval (from OpenAPI spec)</td></tr>
+                <tr><td><strong>Excel</strong></td><td>xlsx (SheetJS)</td></tr>
+                <tr><td><strong>Mobile</strong></td><td>Expo (React Native), EAS Build</td></tr>
+                <tr><td><strong>i18n</strong></td><td>react-i18next (EN/AR/ZH)</td></tr>
+                <tr><td><strong>QR Codes</strong></td><td>qrcode.react (generation) + browser camera (scan)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="item-setup">
+        <button class="accordion-trigger" onclick="toggle('item-setup')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e4a2a,#2d6a4d);">🚀</span>
+          <span class="acc-title">Local Installation</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p style="font-size:12px;color:var(--muted);margin-bottom:14px;">Requires Node.js v20+, pnpm v9+, PostgreSQL 14+</p>
+            <div class="step-list">
+              <div class="step"><div class="step-num">1</div><div class="step-body"><h4>Clone the repository</h4><pre>git clone &lt;repository-url&gt;
+cd oppo-cmms</pre></div></div>
+              <div class="step"><div class="step-num">2</div><div class="step-body"><h4>Create PostgreSQL database</h4><pre>psql -U postgres
+CREATE DATABASE oppo_cmms;
+\q</pre></div></div>
+              <div class="step"><div class="step-num">3</div><div class="step-body"><h4>Create .env file</h4><pre>DATABASE_URL=postgresql://postgres:password@localhost:5432/oppo_cmms
+SESSION_SECRET=change-this-to-a-long-random-string-32-chars-min
+PORT=8080
+NODE_ENV=development</pre></div></div>
+              <div class="step"><div class="step-num">4</div><div class="step-body"><h4>Install dependencies</h4><pre>pnpm install</pre></div></div>
+              <div class="step"><div class="step-num">5</div><div class="step-body"><h4>Push database schema</h4><pre>pnpm --filter @workspace/db run push</pre></div></div>
+              <div class="step"><div class="step-num">6</div><div class="step-body"><h4>Seed sample data</h4><pre>pnpm --filter @workspace/scripts run seed</pre></div></div>
+              <div class="step"><div class="step-num">7</div><div class="step-body"><h4>Start API server</h4><pre>pnpm --filter @workspace/api-server run dev</pre><p>Runs on http://localhost:8080</p></div></div>
+              <div class="step"><div class="step-num">8</div><div class="step-body"><h4>Start frontend (new terminal)</h4><pre>pnpm --filter @workspace/cmms run dev</pre><p>Open http://localhost:5173 in your browser.</p></div></div>
+            </div>
+            <div class="alert alert-success" style="margin-top:14px;">✓ Log in with username <code>admin</code> / password <code>alphraina</code></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="item-envvars">
+        <button class="accordion-trigger" onclick="toggle('item-envvars')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#3a2a1e,#5a3d2d);">🔑</span>
+          <span class="acc-title">Environment Variables</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <table class="acc-table">
+              <thead><tr><th>Variable</th><th>Required</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td><code>DATABASE_URL</code></td><td><span class="badge badge-red">Required</span></td><td>PostgreSQL connection string</td></tr>
+                <tr><td><code>SESSION_SECRET</code></td><td><span class="badge badge-red">Required</span></td><td>Secret key for session cookies (min 32 chars)</td></tr>
+                <tr><td><code>PORT</code></td><td><span class="badge badge-gray">Optional</span></td><td>API server port (default: 8080)</td></tr>
+                <tr><td><code>NODE_ENV</code></td><td><span class="badge badge-gray">Optional</span></td><td><code>development</code> or <code>production</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- REFERENCE -->
+  <div class="section-group">
+    <div class="section-label">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      REFERENCE
+    </div>
+    <div class="accordion-list">
+
+      <div class="accordion-item" id="item-api">
+        <button class="accordion-trigger" onclick="toggle('item-api')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#1e2a5f,#2d3d8f);">🔌</span>
+          <span class="acc-title">API Endpoints</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <p class="acc-desc">All endpoints are prefixed with <code>/api</code> and run at port 8080. Session cookie required for all endpoints except <code>/api/auth/login</code> and public downtime.</p>
+            <table class="acc-table">
+              <thead><tr><th>Path</th><th>Methods</th><th>Description</th></tr></thead>
+              <tbody>
+                <tr><td><code>/api/auth/login</code></td><td>POST</td><td>Login</td></tr>
+                <tr><td><code>/api/auth/logout</code></td><td>POST</td><td>Logout</td></tr>
+                <tr><td><code>/api/auth/me</code></td><td>GET</td><td>Current user info</td></tr>
+                <tr><td><code>/api/users</code></td><td>GET, POST</td><td>User management</td></tr>
+                <tr><td><code>/api/downtime</code></td><td>GET, POST, PATCH</td><td>Downtime records</td></tr>
+                <tr><td><code>/api/broken-machines</code></td><td>GET, POST, PATCH</td><td>Broken machine records</td></tr>
+                <tr><td><code>/api/preventive-maintenance</code></td><td>GET, POST, PATCH</td><td>PM plans</td></tr>
+                <tr><td><code>/api/inventory</code></td><td>GET, POST, PATCH, DELETE</td><td>Spare parts catalog</td></tr>
+                <tr><td><code>/api/spare-part-orders</code></td><td>GET, POST, PATCH</td><td>Part orders</td></tr>
+                <tr><td><code>/api/tasks</code></td><td>GET, POST, PATCH</td><td>Tasks</td></tr>
+                <tr><td><code>/api/attendance</code></td><td>GET, POST, PATCH</td><td>Attendance records</td></tr>
+                <tr><td><code>/api/vacation-requests</code></td><td>GET, POST, PATCH</td><td>Vacation requests</td></tr>
+                <tr><td><code>/api/machines</code></td><td>GET, POST, PATCH, DELETE</td><td>Machine registry</td></tr>
+                <tr><td><code>/api/work-phones</code></td><td>GET, POST, PATCH, DELETE</td><td>Work phone station</td></tr>
+                <tr><td><code>/api/work-phones/import</code></td><td>POST</td><td>Bulk import phones (JSON array)</td></tr>
+                <tr><td><code>/api/kpi</code></td><td>GET</td><td>KPI reports</td></tr>
+                <tr><td><code>/api/announcements</code></td><td>GET, POST, PATCH, DELETE</td><td>Announcements</td></tr>
+                <tr><td><code>/api/notifications</code></td><td>GET, PATCH</td><td>Notifications</td></tr>
+                <tr><td><code>/api/audit-logs</code></td><td>GET, DELETE</td><td>Audit log (admin only)</td></tr>
+                <tr><td><code>/api/shift-settings</code></td><td>GET, PUT</td><td>Shift configuration</td></tr>
+                <tr><td><code>/api/site-settings</code></td><td>GET, PUT</td><td>Site configuration</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item" id="item-troubleshoot">
+        <button class="accordion-trigger" onclick="toggle('item-troubleshoot')">
+          <span class="acc-icon" style="background:linear-gradient(135deg,#5f1e1e,#8f2d2d);">🩺</span>
+          <span class="acc-title">Troubleshooting</span>
+          <svg class="acc-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="accordion-body">
+          <div class="accordion-body-inner">
+            <ul class="acc-list">
+              <li><strong>Cannot connect to DB:</strong> Check that PostgreSQL is running and the DATABASE_URL in .env is correct. Run <code>psql $DATABASE_URL</code> to test the connection.</li>
+              <li><strong>401 Unauthorized on all API calls:</strong> The session cookie is missing. Log in first at <code>/api/auth/login</code>.</li>
+              <li><strong>Frontend shows blank / white screen:</strong> Check browser console for errors; confirm the API server is running on port 8080.</li>
+              <li><strong>Excel import fails:</strong> Ensure column headers match exactly: <code>Work ID</code>, <code>Name</code>, <code>Phone Color</code>, <code>Phone Number</code>, <code>PCBA Number</code>.</li>
+              <li><strong>QR scan not working:</strong> Camera permission must be granted in the browser; HTTPS required in production.</li>
+              <li><strong>Push notifications not arriving on mobile:</strong> Make sure the user granted notification permission in the Expo app and the API server can reach the Expo Push API.</li>
+              <li><strong>Auto-absent not running:</strong> Confirm the API server started successfully — the scheduler logs "[Scheduler] Starting" on boot. Runs every 15 minutes.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function toggle(id) {
+    const item = document.getElementById(id);
+    const body = item.querySelector('.accordion-body');
+    const isOpen = item.classList.contains('open');
+    item.classList.toggle('open', !isOpen);
+    body.classList.toggle('visible', !isOpen);
+  }
+</script>
+</body>
+</html>

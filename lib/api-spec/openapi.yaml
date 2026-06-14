@@ -1,0 +1,2012 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: OPPO Factory CMMS API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication
+  - name: users
+    description: User management
+  - name: downtime
+    description: Downtime records
+  - name: inventory
+    description: Inventory and spare parts
+  - name: sparepart-orders
+    description: Spare part orders
+  - name: preventive-maintenance
+    description: Preventive maintenance plans
+  - name: training
+    description: Training plans
+  - name: production
+    description: Production capacity
+  - name: tasks
+    description: Tasks and notifications
+  - name: line-plans
+    description: Daily line plans
+  - name: attendance
+    description: Attendance records
+  - name: broken-machines
+    description: Broken machine records
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users:
+    get:
+      operationId: getUsers
+      tags: [users]
+      summary: Get all users
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      operationId: getUserById
+      tags: [users]
+      summary: Get user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    put:
+      operationId: updateUser
+      tags: [users]
+      summary: Update user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /downtime:
+    get:
+      operationId: getDowntimeRecords
+      tags: [downtime]
+      summary: Get downtime records
+      responses:
+        "200":
+          description: List of downtime records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DowntimeRecord"
+    post:
+      operationId: createDowntimeRecord
+      tags: [downtime]
+      summary: Create downtime record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDowntimeRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DowntimeRecord"
+
+  /downtime/{id}:
+    get:
+      operationId: getDowntimeById
+      tags: [downtime]
+      summary: Get downtime record by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Downtime record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DowntimeRecord"
+    put:
+      operationId: updateDowntime
+      tags: [downtime]
+      summary: Update downtime record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDowntimeRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DowntimeRecord"
+
+  /inventory:
+    get:
+      operationId: getInventory
+      tags: [inventory]
+      summary: Get inventory items
+      responses:
+        "200":
+          description: List of inventory items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryItem"
+    post:
+      operationId: createInventoryItem
+      tags: [inventory]
+      summary: Create inventory item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInventoryItemRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+
+  /inventory/{id}:
+    get:
+      operationId: getInventoryItemById
+      tags: [inventory]
+      summary: Get inventory item by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Inventory item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+    put:
+      operationId: updateInventoryItem
+      tags: [inventory]
+      summary: Update inventory item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInventoryItemRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+    delete:
+      operationId: deleteInventoryItem
+      tags: [inventory]
+      summary: Delete inventory item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /sparepart-orders:
+    get:
+      operationId: getSparepartOrders
+      tags: [sparepart-orders]
+      summary: Get spare part orders
+      responses:
+        "200":
+          description: List of orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SparepartOrder"
+    post:
+      operationId: createSparepartOrder
+      tags: [sparepart-orders]
+      summary: Create spare part order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSparepartOrderRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SparepartOrder"
+
+  /sparepart-orders/{id}:
+    put:
+      operationId: updateSparepartOrder
+      tags: [sparepart-orders]
+      summary: Update spare part order status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSparepartOrderRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SparepartOrder"
+
+  /preventive-maintenance:
+    get:
+      operationId: getPreventiveMaintenancePlans
+      tags: [preventive-maintenance]
+      summary: Get preventive maintenance plans
+      responses:
+        "200":
+          description: List of PM plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PreventiveMaintenancePlan"
+    post:
+      operationId: createPreventiveMaintenancePlan
+      tags: [preventive-maintenance]
+      summary: Create PM plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePMPlanRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreventiveMaintenancePlan"
+
+  /preventive-maintenance/{id}:
+    get:
+      operationId: getPMPlanById
+      tags: [preventive-maintenance]
+      summary: Get PM plan by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: PM plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreventiveMaintenancePlan"
+    put:
+      operationId: updatePMPlan
+      tags: [preventive-maintenance]
+      summary: Update PM plan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePMPlanRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PreventiveMaintenancePlan"
+    delete:
+      operationId: deletePMPlan
+      tags: [preventive-maintenance]
+      summary: Delete PM plan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /training:
+    get:
+      operationId: getTrainingPlans
+      tags: [training]
+      summary: Get training plans
+      responses:
+        "200":
+          description: List of training plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrainingPlan"
+    post:
+      operationId: createTrainingPlan
+      tags: [training]
+      summary: Create training plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTrainingPlanRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlan"
+
+  /training/{id}:
+    get:
+      operationId: getTrainingPlanById
+      tags: [training]
+      summary: Get training plan by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Training plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlan"
+    put:
+      operationId: updateTrainingPlan
+      tags: [training]
+      summary: Update training plan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTrainingPlanRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TrainingPlan"
+    delete:
+      operationId: deleteTrainingPlan
+      tags: [training]
+      summary: Delete training plan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /production:
+    get:
+      operationId: getProductionRecords
+      tags: [production]
+      summary: Get production capacity records
+      responses:
+        "200":
+          description: List of production records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductionRecord"
+    post:
+      operationId: createProductionRecord
+      tags: [production]
+      summary: Create production record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductionRecordRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionRecord"
+
+  /production/lines:
+    get:
+      operationId: getProductionLines
+      tags: [production]
+      summary: Get production lines
+      responses:
+        "200":
+          description: List of production lines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductionLine"
+    post:
+      operationId: createProductionLine
+      tags: [production]
+      summary: Create production line
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProductionLineRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionLine"
+
+  /production/lines/{id}:
+    put:
+      operationId: updateProductionLine
+      tags: [production]
+      summary: Update production line
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProductionLineRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductionLine"
+
+  /tasks:
+    get:
+      operationId: getTasks
+      tags: [tasks]
+      summary: Get tasks and notifications
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Create task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}:
+    put:
+      operationId: updateTask
+      tags: [tasks]
+      summary: Update task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTaskRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+    delete:
+      operationId: deleteTask
+      tags: [tasks]
+      summary: Delete task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /line-plans:
+    get:
+      operationId: getLinePlans
+      tags: [line-plans]
+      summary: Get daily line plans
+      responses:
+        "200":
+          description: List of line plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LinePlan"
+    post:
+      operationId: createLinePlan
+      tags: [line-plans]
+      summary: Create daily line plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateLinePlanRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LinePlan"
+
+  /line-plans/{id}:
+    put:
+      operationId: updateLinePlan
+      tags: [line-plans]
+      summary: Update line plan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLinePlanRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LinePlan"
+
+  /attendance:
+    get:
+      operationId: getAttendanceRecords
+      tags: [attendance]
+      summary: Get attendance records
+      responses:
+        "200":
+          description: List of attendance records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AttendanceRecord"
+    post:
+      operationId: createAttendanceRecord
+      tags: [attendance]
+      summary: Create attendance record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAttendanceRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceRecord"
+
+  /attendance/{id}:
+    put:
+      operationId: updateAttendanceRecord
+      tags: [attendance]
+      summary: Update attendance record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAttendanceRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceRecord"
+
+  /broken-machines:
+    get:
+      operationId: getBrokenMachines
+      tags: [broken-machines]
+      summary: Get broken machine records
+      responses:
+        "200":
+          description: List of broken machine records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BrokenMachineRecord"
+    post:
+      operationId: createBrokenMachineRecord
+      tags: [broken-machines]
+      summary: Create broken machine record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBrokenMachineRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrokenMachineRecord"
+
+  /broken-machines/{id}:
+    put:
+      operationId: updateBrokenMachine
+      tags: [broken-machines]
+      summary: Update broken machine record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBrokenMachineRequest"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BrokenMachineRecord"
+
+  /notifications:
+    get:
+      operationId: getNotifications
+      tags: [tasks]
+      summary: Get notifications for current user
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{id}/read:
+    put:
+      operationId: markNotificationRead
+      tags: [tasks]
+      summary: Mark notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        message:
+          type: string
+      required:
+        - user
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, manager, maintenance, inventory]
+        department:
+          type: string
+        phone:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - username
+        - fullName
+        - role
+        - isActive
+
+    CreateUserRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, manager, maintenance, inventory]
+        department:
+          type: string
+        phone:
+          type: string
+      required:
+        - username
+        - password
+        - fullName
+        - role
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, manager, maintenance, inventory]
+        department:
+          type: string
+        phone:
+          type: string
+        isActive:
+          type: boolean
+        password:
+          type: string
+
+    DowntimeRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        machineName:
+          type: string
+        lineId:
+          type: integer
+        lineName:
+          type: string
+        startTime:
+          type: string
+        endTime:
+          type: string
+        durationMinutes:
+          type: integer
+        reason:
+          type: string
+        category:
+          type: string
+          enum: [mechanical, electrical, software, material, other]
+        recordedById:
+          type: integer
+        recordedByName:
+          type: string
+        status:
+          type: string
+          enum: [ongoing, resolved]
+        notes:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - machineName
+        - lineId
+        - startTime
+        - reason
+        - category
+        - recordedById
+        - status
+
+    CreateDowntimeRequest:
+      type: object
+      properties:
+        machineName:
+          type: string
+        lineId:
+          type: integer
+        startTime:
+          type: string
+        reason:
+          type: string
+        category:
+          type: string
+          enum: [mechanical, electrical, software, material, other]
+        notes:
+          type: string
+      required:
+        - machineName
+        - lineId
+        - startTime
+        - reason
+        - category
+
+    UpdateDowntimeRequest:
+      type: object
+      properties:
+        endTime:
+          type: string
+        status:
+          type: string
+          enum: [ongoing, resolved]
+        notes:
+          type: string
+        reason:
+          type: string
+
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        partNumber:
+          type: string
+        partName:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        quantity:
+          type: integer
+        minQuantity:
+          type: integer
+        unit:
+          type: string
+        location:
+          type: string
+        supplier:
+          type: string
+        unitPrice:
+          type: number
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - partNumber
+        - partName
+        - quantity
+        - minQuantity
+
+    CreateInventoryItemRequest:
+      type: object
+      properties:
+        partNumber:
+          type: string
+        partName:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        quantity:
+          type: integer
+        minQuantity:
+          type: integer
+        unit:
+          type: string
+        location:
+          type: string
+        supplier:
+          type: string
+        unitPrice:
+          type: number
+      required:
+        - partNumber
+        - partName
+        - quantity
+        - minQuantity
+
+    UpdateInventoryItemRequest:
+      type: object
+      properties:
+        partName:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        quantity:
+          type: integer
+        minQuantity:
+          type: integer
+        unit:
+          type: string
+        location:
+          type: string
+        supplier:
+          type: string
+        unitPrice:
+          type: number
+        isActive:
+          type: boolean
+
+    SparepartOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+        inventoryItemId:
+          type: integer
+        partName:
+          type: string
+        partNumber:
+          type: string
+        quantity:
+          type: integer
+        reason:
+          type: string
+        status:
+          type: string
+          enum: [pending, approved, rejected, fulfilled]
+        orderedById:
+          type: integer
+        orderedByName:
+          type: string
+        approvedById:
+          type: integer
+        approvedByName:
+          type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - inventoryItemId
+        - quantity
+        - status
+        - orderedById
+
+    CreateSparepartOrderRequest:
+      type: object
+      properties:
+        inventoryItemId:
+          type: integer
+        quantity:
+          type: integer
+        reason:
+          type: string
+        notes:
+          type: string
+      required:
+        - inventoryItemId
+        - quantity
+        - reason
+
+    UpdateSparepartOrderRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, approved, rejected, fulfilled]
+        notes:
+          type: string
+
+    PreventiveMaintenancePlan:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        machineName:
+          type: string
+        lineId:
+          type: integer
+        lineName:
+          type: string
+        frequency:
+          type: string
+          enum: [daily, weekly, monthly, quarterly]
+        nextDueDate:
+          type: string
+        lastCompletedDate:
+          type: string
+        assignedToId:
+          type: integer
+        assignedToName:
+          type: string
+        estimatedDurationMinutes:
+          type: integer
+        status:
+          type: string
+          enum: [active, completed, overdue, paused]
+        shift:
+          type: string
+          enum: [morning, afternoon, night]
+        emailNotification:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - machineName
+        - frequency
+        - nextDueDate
+        - status
+
+    CreatePMPlanRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        machineName:
+          type: string
+        lineId:
+          type: integer
+        frequency:
+          type: string
+          enum: [daily, weekly, monthly, quarterly]
+        nextDueDate:
+          type: string
+        assignedToId:
+          type: integer
+        estimatedDurationMinutes:
+          type: integer
+        shift:
+          type: string
+          enum: [morning, afternoon, night]
+        emailNotification:
+          type: boolean
+      required:
+        - title
+        - machineName
+        - frequency
+        - nextDueDate
+
+    UpdatePMPlanRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        machineName:
+          type: string
+        lineId:
+          type: integer
+        frequency:
+          type: string
+          enum: [daily, weekly, monthly, quarterly]
+        nextDueDate:
+          type: string
+        assignedToId:
+          type: integer
+        estimatedDurationMinutes:
+          type: integer
+        status:
+          type: string
+          enum: [active, completed, overdue, paused]
+        shift:
+          type: string
+          enum: [morning, afternoon, night]
+        emailNotification:
+          type: boolean
+        lastCompletedDate:
+          type: string
+
+    TrainingPlan:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        trainerName:
+          type: string
+        scheduledDate:
+          type: string
+        scheduledTime:
+          type: string
+        durationMinutes:
+          type: integer
+        location:
+          type: string
+        status:
+          type: string
+          enum: [scheduled, completed, cancelled]
+        participants:
+          type: array
+          items:
+            type: integer
+        participantNames:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - scheduledDate
+        - status
+
+    CreateTrainingPlanRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        trainerName:
+          type: string
+        scheduledDate:
+          type: string
+        scheduledTime:
+          type: string
+        durationMinutes:
+          type: integer
+        location:
+          type: string
+        participants:
+          type: array
+          items:
+            type: integer
+      required:
+        - title
+        - scheduledDate
+
+    UpdateTrainingPlanRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        trainerName:
+          type: string
+        scheduledDate:
+          type: string
+        scheduledTime:
+          type: string
+        durationMinutes:
+          type: integer
+        location:
+          type: string
+        status:
+          type: string
+          enum: [scheduled, completed, cancelled]
+        participants:
+          type: array
+          items:
+            type: integer
+
+    ProductionLine:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        targetCapacityPerHour:
+          type: integer
+        minimumCapacityPerHour:
+          type: integer
+        responsibleUserId:
+          type: integer
+        responsibleUserName:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - targetCapacityPerHour
+        - minimumCapacityPerHour
+
+    CreateProductionLineRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        targetCapacityPerHour:
+          type: integer
+        minimumCapacityPerHour:
+          type: integer
+        responsibleUserId:
+          type: integer
+      required:
+        - name
+        - targetCapacityPerHour
+        - minimumCapacityPerHour
+
+    UpdateProductionLineRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        targetCapacityPerHour:
+          type: integer
+        minimumCapacityPerHour:
+          type: integer
+        responsibleUserId:
+          type: integer
+        isActive:
+          type: boolean
+
+    ProductionRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        lineId:
+          type: integer
+        lineName:
+          type: string
+        recordedAt:
+          type: string
+        hour:
+          type: integer
+        actualCapacity:
+          type: integer
+        targetCapacity:
+          type: integer
+        belowLimit:
+          type: boolean
+        reason:
+          type: string
+        recordedById:
+          type: integer
+        recordedByName:
+          type: string
+        shift:
+          type: string
+          enum: [morning, afternoon, night]
+        date:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - lineId
+        - recordedAt
+        - actualCapacity
+        - recordedById
+
+    CreateProductionRecordRequest:
+      type: object
+      properties:
+        lineId:
+          type: integer
+        recordedAt:
+          type: string
+        hour:
+          type: integer
+        actualCapacity:
+          type: integer
+        shift:
+          type: string
+          enum: [morning, afternoon, night]
+        reason:
+          type: string
+        date:
+          type: string
+      required:
+        - lineId
+        - actualCapacity
+        - shift
+        - date
+
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        assignedToId:
+          type: integer
+        assignedToName:
+          type: string
+        assignedById:
+          type: integer
+        assignedByName:
+          type: string
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        status:
+          type: string
+          enum: [pending, in_progress, completed, cancelled]
+        dueDate:
+          type: string
+        completedAt:
+          type: string
+        type:
+          type: string
+          enum: [maintenance, inspection, repair, general]
+        relatedMachine:
+          type: string
+        lineId:
+          type: integer
+        lineName:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - assignedToId
+        - priority
+        - status
+        - type
+
+    CreateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        assignedToId:
+          type: integer
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        dueDate:
+          type: string
+        type:
+          type: string
+          enum: [maintenance, inspection, repair, general]
+        relatedMachine:
+          type: string
+        lineId:
+          type: integer
+      required:
+        - title
+        - assignedToId
+        - priority
+        - type
+
+    UpdateTaskRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        assignedToId:
+          type: integer
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        status:
+          type: string
+          enum: [pending, in_progress, completed, cancelled]
+        dueDate:
+          type: string
+        completedAt:
+          type: string
+
+    LinePlan:
+      type: object
+      properties:
+        id:
+          type: integer
+        date:
+          type: string
+        shift:
+          type: string
+          enum: [morning, afternoon, night]
+        lineId:
+          type: integer
+        lineName:
+          type: string
+        assignedToId:
+          type: integer
+        assignedToName:
+          type: string
+        createdById:
+          type: integer
+        createdByName:
+          type: string
+        tasks:
+          type: string
+        notes:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, completed]
+        createdAt:
+          type: string
+      required:
+        - id
+        - date
+        - shift
+        - lineId
+        - assignedToId
+        - status
+
+    CreateLinePlanRequest:
+      type: object
+      properties:
+        date:
+          type: string
+        shift:
+          type: string
+          enum: [morning, afternoon, night]
+        lineId:
+          type: integer
+        assignedToId:
+          type: integer
+        tasks:
+          type: string
+        notes:
+          type: string
+      required:
+        - date
+        - shift
+        - lineId
+        - assignedToId
+
+    UpdateLinePlanRequest:
+      type: object
+      properties:
+        date:
+          type: string
+        shift:
+          type: string
+          enum: [morning, afternoon, night]
+        lineId:
+          type: integer
+        assignedToId:
+          type: integer
+        tasks:
+          type: string
+        notes:
+          type: string
+        status:
+          type: string
+          enum: [draft, published, completed]
+
+    AttendanceRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        date:
+          type: string
+        checkIn:
+          type: string
+        checkOut:
+          type: string
+        shift:
+          type: string
+          enum: [morning, afternoon, night]
+        status:
+          type: string
+          enum: [present, absent, late, leave, halfday]
+        notes:
+          type: string
+        recordedById:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - date
+        - shift
+        - status
+
+    CreateAttendanceRequest:
+      type: object
+      properties:
+        userId:
+          type: integer
+        date:
+          type: string
+        checkIn:
+          type: string
+        checkOut:
+          type: string
+        shift:
+          type: string
+          enum: [morning, afternoon, night]
+        status:
+          type: string
+          enum: [present, absent, late, leave, halfday]
+        notes:
+          type: string
+      required:
+        - userId
+        - date
+        - shift
+        - status
+
+    UpdateAttendanceRequest:
+      type: object
+      properties:
+        checkIn:
+          type: string
+        checkOut:
+          type: string
+        status:
+          type: string
+          enum: [present, absent, late, leave, halfday]
+        notes:
+          type: string
+
+    BrokenMachineRecord:
+      type: object
+      properties:
+        id:
+          type: integer
+        machineName:
+          type: string
+        machineCode:
+          type: string
+        lineId:
+          type: integer
+        lineName:
+          type: string
+        reportedById:
+          type: integer
+        reportedByName:
+          type: string
+        assignedToId:
+          type: integer
+        assignedToName:
+          type: string
+        problemDescription:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        status:
+          type: string
+          enum: [reported, in_progress, resolved, closed]
+        reportedAt:
+          type: string
+        resolvedAt:
+          type: string
+        resolutionNotes:
+          type: string
+        partsUsed:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - machineName
+        - lineId
+        - reportedById
+        - problemDescription
+        - severity
+        - status
+        - reportedAt
+
+    CreateBrokenMachineRequest:
+      type: object
+      properties:
+        machineName:
+          type: string
+        machineCode:
+          type: string
+        lineId:
+          type: integer
+        problemDescription:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        reportedAt:
+          type: string
+        assignedToId:
+          type: integer
+      required:
+        - machineName
+        - lineId
+        - problemDescription
+        - severity
+
+    UpdateBrokenMachineRequest:
+      type: object
+      properties:
+        assignedToId:
+          type: integer
+        status:
+          type: string
+          enum: [reported, in_progress, resolved, closed]
+        resolutionNotes:
+          type: string
+        resolvedAt:
+          type: string
+        partsUsed:
+          type: string
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        title:
+          type: string
+        message:
+          type: string
+        type:
+          type: string
+          enum: [task, pm, training, production, general]
+        isRead:
+          type: boolean
+        relatedId:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - title
+        - message
+        - type
+        - isRead

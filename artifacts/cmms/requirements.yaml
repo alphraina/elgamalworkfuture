@@ -1,0 +1,19 @@
+packages:
+  "recharts": "Used for production and downtime dashboard analytics charts"
+  "date-fns": "For human-readable date formatting across all data tables"
+  "framer-motion": "For page transitions, modal animations, and industrial UI effects"
+  "lucide-react": "For UI icons across the application"
+  "clsx": "Utility for constructing className strings conditionally"
+  "tailwind-merge": "Utility function to efficiently merge Tailwind CSS classes"
+
+images:
+  - path: "artifacts/cmms/public/images/factory-bg.png"
+    description: "Dark, moody, industrial factory floor with glowing blue neon lights and metallic surfaces, very abstract and high-tech, shallow depth of field"
+    aspect_ratio: "16:9"
+  - path: "artifacts/cmms/public/images/oppo-logo-placeholder.png"
+    description: "Abstract minimalist high-tech logo featuring the letter O in glowing bright blue on a dark carbon fiber background"
+    aspect_ratio: "1:1"
+
+notes:
+  - "App assumes role-based access control with standard generic auth hooks"
+  - "Using React Hook Form approach with native FormData for rapid complex form deployment"

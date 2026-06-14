@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/cmms-mobile/"
+title = "OPPO CMMS Mobile"
+version = "1.0.0"
+id = "artifacts/cmms-mobile"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/cmms-mobile/" ]
+localPort = 19346
+
+[services.development]
+run = "pnpm --filter @workspace/cmms-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/cmms-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/cmms-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "19346"
+BASE_PATH = "/cmms-mobile/"

@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "YCW3LpRhe8Cb26GnFLGdl"
+uri = "file://cmms-tutorial.mp4"
+type = "video"
+title = "OPPO CMMS — Full System Walkthrough (Real Recording, 80 sec)"

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OMTP Log Pusher — Setup Guide</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    line-height: 1.6;
+    padding: 20px;
+  }
+  .container { max-width: 820px; margin: 0 auto; }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #1e3a5f, #0f2440);
+    border: 1px solid #3b82f6;
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .header-logo {
+    font-size: 48px;
+    line-height: 1;
+  }
+  .header h1 { font-size: 22px; color: #60a5fa; margin-bottom: 4px; }
+  .header p { font-size: 14px; color: #94a3b8; }
+
+  /* Steps */
+  .step {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 22px 24px;
+    margin-bottom: 18px;
+    position: relative;
+  }
+  .step-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: #3b82f6;
+    color: white;
+    font-weight: 700;
+    font-size: 15px;
+    border-radius: 50%;
+    margin-bottom: 10px;
+  }
+  .step h2 {
+    font-size: 17px;
+    color: #f1f5f9;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .step p { color: #94a3b8; font-size: 14px; margin-bottom: 10px; }
+
+  /* Code / CMD block */
+  .cmd {
+    background: #0f172a;
+    border: 1px solid #1d4ed8;
+    border-left: 4px solid #3b82f6;
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 13px;
+    color: #7dd3fc;
+    margin: 10px 0;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* Path highlight */
+  .path {
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-family: 'Consolas', monospace;
+    font-size: 13px;
+    color: #fbbf24;
+  }
+
+  /* Info / Warning boxes */
+  .info {
+    background: #0c2340;
+    border: 1px solid #1d4ed8;
+    border-left: 4px solid #3b82f6;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #93c5fd;
+    margin: 10px 0;
+  }
+  .warning {
+    background: #2d1b00;
+    border: 1px solid #92400e;
+    border-left: 4px solid #f59e0b;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #fcd34d;
+    margin: 10px 0;
+  }
+  .success {
+    background: #052e16;
+    border: 1px solid #166534;
+    border-left: 4px solid #22c55e;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #86efac;
+    margin: 10px 0;
+  }
+
+  /* File structure diagram */
+  .folder {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 14px 18px;
+    font-family: 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 2;
+    margin: 10px 0;
+    color: #e2e8f0;
+  }
+  .folder .dir { color: #fbbf24; }
+  .folder .file { color: #86efac; }
+  .folder .highlight { color: #f87171; font-weight: bold; }
+
+  /* Screenshot placeholder */
+  .screen {
+    background: #0f172a;
+    border: 2px dashed #334155;
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    color: #475569;
+    font-size: 13px;
+    margin: 10px 0;
+  }
+
+  /* Checklist */
+  .checklist { list-style: none; padding: 0; margin: 10px 0; }
+  .checklist li {
+    padding: 8px 0 8px 32px;
+    position: relative;
+    border-bottom: 1px solid #1e293b;
+    font-size: 14px;
+    color: #94a3b8;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li::before {
+    content: "☐";
+    position: absolute;
+    left: 4px;
+    color: #3b82f6;
+    font-size: 16px;
+  }
+
+  /* Flow diagram */
+  .flow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 14px 0;
+    padding: 14px;
+    background: #0f172a;
+    border-radius: 8px;
+    border: 1px solid #1e293b;
+  }
+  .flow-box {
+    background: #1e3a5f;
+    border: 1px solid #3b82f6;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: #93c5fd;
+    text-align: center;
+  }
+  .flow-arrow { color: #3b82f6; font-size: 18px; }
+
+  /* Question table */
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+  th { background: #1e293b; color: #60a5fa; text-align: left; padding: 10px 14px; }
+  td { padding: 9px 14px; border-bottom: 1px solid #1e293b; color: #94a3b8; }
+  td:first-child { color: #f1f5f9; font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+
+  .tag {
+    display: inline-block;
+    background: #1e3a5f;
+    color: #60a5fa;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  h3 { color: #60a5fa; font-size: 14px; margin: 14px 0 8px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logo">📡</div>
+    <div>
+      <h1>OMTP Log Pusher — Setup Guide</h1>
+      <p>Reads CSV log files from your Windows PC and sends them to the OPPO CMMS Machine Monitor</p>
+    </div>
+  </div>
+
+  <!-- How it works -->
+  <div class="step">
+    <h2>🔄 How It Works</h2>
+    <div class="flow">
+      <div class="flow-box">📁 D:\OMTP_LOG\<br>CPH2523\data\<br>22-3-2026.csv</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">🐍 Python Script<br>reads CSV<br>every 30 sec</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">🌐 CMMS API<br>/api/machine-data</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">📊 Machine<br>Monitor<br>Dashboard</div>
+    </div>
+    <div class="info">
+      The script automatically reads today's date and the product model code (e.g. CPH2523)
+      from the CMMS shift setup — you only need to enter it once at shift start.
+    </div>
+  </div>
+
+  <!-- Step 1: Download -->
+  <div class="step">
+    <div class="step-number">1</div>
+    <h2>⬇️ Download the Script (Admin Only)</h2>
+    <p>Log in to the CMMS as <b>Admin</b>, then:</p>
+    <ol style="padding-left:20px; color:#94a3b8; font-size:14px; line-height:2.4;">
+      <li>In the left menu → scroll to the bottom → click <b>Factory Settings</b></li>
+      <li>Scroll to the bottom of Factory Settings</li>
+      <li>Find the green section: <b>"OMTP Log Pusher — Download Ready-to-Run Script"</b></li>
+      <li>Click the big green <b>Download Script</b> button</li>
+      <li>The file <span class="path">cmms_Start.bat</span> will download — save it anywhere (e.g. Desktop)</li>
+    </ol>
+    <div class="success">
+      ✅ The downloaded file already contains your server URL and API key inside it — <b>no editing needed</b>.
+    </div>
+    <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:14px; margin:14px 0; font-size:13px;">
+      <div style="color:#60a5fa; font-weight:bold; margin-bottom:10px;">📌 Where to find it in CMMS:</div>
+      <div style="font-family:monospace; font-size:12px; color:#94a3b8; line-height:2;">
+        Left Menu → <span style="color:#f1f5f9;">Factory Settings</span><br>
+        ↓ Scroll to bottom ↓<br>
+        <span style="background:#064e3b; border:1px solid #10b981; border-radius:4px; padding:2px 10px; color:#4ade80;">⬇ Download Script</span> button (green)
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2: Python -->
+  <div class="step">
+    <div class="step-number">2</div>
+    <h2>🐍 Python — Installed Automatically (no action needed)</h2>
+    <p>The script checks for Python when it runs. <b>You do not need to install anything manually.</b></p>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0;">
+      <div style="background:#1a2a1a; border:1px solid #166534; border-radius:8px; padding:14px;">
+        <div style="color:#4ade80; font-weight:bold; margin-bottom:8px;">✅ Python already installed</div>
+        <p style="color:#94a3b8; font-size:13px; margin:0;">The script detects it automatically and continues — even if it was not added to PATH during installation.</p>
+      </div>
+      <div style="background:#0c2340; border:1px solid #1d4ed8; border-radius:8px; padding:14px;">
+        <div style="color:#60a5fa; font-weight:bold; margin-bottom:8px;">🔽 Python not found</div>
+        <p style="color:#94a3b8; font-size:13px; margin:0;">The script automatically <b style="color:#f1f5f9;">downloads Python 3.11</b> from python.org and installs it silently. No clicking, no checkboxes. Takes 1–2 minutes the first time only.</p>
+      </div>
+    </div>
+
+    <p style="color:#94a3b8; font-size:13px;">After installation the PATH is updated automatically in the current session — the script continues without needing a restart.</p>
+    <div class="info">
+      💡 Only needs internet connection the first time. Once Python is installed, it is permanent and this step is skipped on every future run.
+    </div>
+  </div>
+
+  <!-- Step 3: Run -->
+  <div class="step">
+    <div class="step-number">3</div>
+    <h2>▶️ Double-Click to Run — Zero Questions</h2>
+    <p>Double-click <span class="path">cmms_Start.bat</span> — a <b style="color:#4ade80;">green window</b> opens. It will:</p>
+    <ul style="padding-left:20px; color:#94a3b8; font-size:14px; line-height:2.4; margin-bottom:14px;">
+      <li>Check Python — install it automatically if missing ✅</li>
+      <li>Add Python to PATH automatically ✅</li>
+      <li>Install required packages automatically ✅</li>
+      <li>Download the pusher script from CMMS automatically ✅</li>
+      <li><b style="color:#4ade80;">Auto-identify this PC</b> via Machine Registry (IP address lookup) ✅</li>
+      <li><b style="color:#4ade80;">Auto-fetch the product model</b> from today's shift setup in CMMS ✅</li>
+    </ul>
+    <div style="background:#0c2340; border:1px solid #1d4ed8; border-radius:8px; padding:14px; margin-bottom:14px;">
+      <div style="color:#60a5fa; font-weight:bold; margin-bottom:8px;">How identification works (two modes):</div>
+      <p style="color:#60a5fa; font-size:13px; margin:0 0 4px;"><b>Mode 1 — IP Lookup (recommended)</b></p>
+      <p style="color:#94a3b8; font-size:13px; margin:0 0 8px;">
+        When this PC's IP address is registered in <b>CMMS → Machine Registry</b>, the script calls the CMMS API to look up its own IP.
+        CMMS returns the Line ID and today's product model from the shift setup automatically.
+        No folder-name tricks needed.
+      </p>
+      <p style="color:#60a5fa; font-size:13px; margin:0 0 4px;"><b>Mode 2 — Folder-Name Fallback</b></p>
+      <p style="color:#94a3b8; font-size:13px; margin:0 0 8px;">
+        If this PC's IP is not in the Machine Registry, the script reads the OMTP folder name instead:
+      </p>
+      <div class="cmd" style="margin:0 0 8px;">TAM30202  →  Line 2
+TAM30203  →  Line 3
+TAM30210  →  Line 10</div>
+      <p style="color:#94a3b8; font-size:13px; margin:0;">
+        💡 To use Mode 1: go to <b>CMMS → Machine Registry</b>, open the machine for this PC, and enter its IP address in the <b>Machine IP</b> field.
+      </p>
+    </div>
+    <div class="success">
+      ✅ When running, you will see messages like:<br>
+      <span style="color:#4ade80;">2026-03-22 08:15:00 [INFO] This PC: 192.168.1.105<br>
+      2026-03-22 08:15:00 [INFO] Machine: SMT-01 (MR-042) — Line 2 — Model: TAM30202<br>
+      2026-03-22 08:15:01 [INFO] Line 2 (Line 2) | TAM30202 — pushed 12 new rows</span>
+    </div>
+    <div class="warning">
+      ⚠️ Keep the green window open — do not close it. If you close it, data will stop sending.
+    </div>
+  </div>
+
+  <!-- Step 4: Team Leader -->
+  <div class="step">
+    <div class="step-number">4</div>
+    <h2>📱 Team Leader: Enter Product Model Code Each Shift</h2>
+    <p>The team leader must enter the product model code in CMMS so the script knows which CSV folder to read:</p>
+    <ol style="padding-left:20px; color:#94a3b8; font-size:14px; line-height:2.2;">
+      <li>Open CMMS → click <b>Production Capacity</b></li>
+      <li>Click the <b>Shift Setup</b> tab</li>
+      <li>Find the correct line and type the <b>Product Model Code</b> (e.g. <span class="path">CPH2523</span>)</li>
+      <li>Click <b>Save</b></li>
+    </ol>
+    <div class="info">
+      📁 The script will then look for the CSV here:<br><br>
+      <span class="path">D:\OMTP_LOG\<b>CPH2523</b>\data\<b>22-3-2026</b>.csv</span>
+    </div>
+    <div class="warning">
+      ⚠️ If the team leader hasn't entered the model code yet, the script will wait and show "No product model set." This is normal — just enter the code in CMMS and the script will continue automatically.
+    </div>
+  </div>
+
+  <!-- CSV Format -->
+  <div class="step">
+    <div class="step-number">5</div>
+    <h2>📋 CSV File Format</h2>
+    <p>The CSV file the script reads should have these columns (first row = column names):</p>
+    <table>
+      <tr><th>Column Name</th><th>What it means</th><th>Example value</th></tr>
+      <tr><td>Station</td><td>Station or machine name/number</td><td>SMT-A or 01</td></tr>
+      <tr><td>Pass</td><td>Passing units count</td><td>198</td></tr>
+      <tr><td>Fail</td><td>Failing units count</td><td>2</td></tr>
+      <tr><td>Error</td><td>Error or failure code</td><td>E001</td></tr>
+      <tr><td>Timestamp</td><td>Date and time of reading</td><td>2026-03-22 14:30:00</td></tr>
+    </table>
+    <p style="margin-top:12px;">If your CSV uses different column names (e.g. <span class="path">Stn</span> instead of <span class="path">Station</span>), ask your CMMS admin to configure the column mapping in CMMS → Machine Monitor settings.</p>
+  </div>
+
+  <!-- Troubleshooting -->
+  <div class="step">
+    <div class="step-number">6</div>
+    <h2>🔧 Troubleshooting</h2>
+    <table>
+      <tr><th>Problem</th><th>Solution</th></tr>
+      <tr>
+        <td>Window disappears immediately when I double-click</td>
+        <td>Right-click on <span class="path">cmms_Start.bat</span> → <b>Run as administrator</b></td>
+      </tr>
+      <tr>
+        <td>Python not found / installing Python message</td>
+        <td>This is normal on first run — the script downloads and installs Python automatically. Wait 1–2 minutes. If it fails, check internet connection and try again. As a last resort: <a href="https://www.python.org/downloads/" style="color:#60a5fa;">python.org/downloads</a></td>
+      </tr>
+      <tr>
+        <td>"No product model set" message</td>
+        <td>Team leader must enter the model code in CMMS → Production Capacity → Shift Setup</td>
+      </tr>
+      <tr>
+        <td>"CSV not found" warning</td>
+        <td>Check that the log folder exists at: <span class="path">D:\OMTP_LOG\{MODEL}\data\</span> and today's CSV file is there</td>
+      </tr>
+      <tr>
+        <td>"Invalid API key" or "401" error</td>
+        <td>Download a new <span class="path">cmms_Start.bat</span> from CMMS Factory Settings — the key may have been regenerated</td>
+      </tr>
+      <tr>
+        <td>Data not appearing in Machine Monitor</td>
+        <td>Wait 30–60 seconds (the monitor refreshes every 30s). Also check that the machine IP in the CSV matches the Machine Registry in CMMS.</td>
+      </tr>
+      <tr>
+        <td>Script stopped working after admin regenerated API key</td>
+        <td>Download a new <span class="path">cmms_Start.bat</span> from CMMS Factory Settings and replace the old one</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Daily Usage -->
+  <div class="step">
+    <div class="step-number">7</div>
+    <h2>📅 Daily Usage (after first setup)</h2>
+    <p style="color:#94a3b8; font-size:14px; margin-bottom:12px;">Zero configuration — the script identifies itself automatically and downloads the latest version every run.</p>
+    <ul class="checklist">
+      <li>Double-click <span class="path">cmms_Start.bat</span> on the factory PC — starts immediately, no questions</li>
+      <li>The script auto-identifies this PC via IP lookup in Machine Registry</li>
+      <li>The product model is fetched automatically from today's shift setup in CMMS</li>
+      <li>Leave the green window open all shift — do not close it</li>
+      <li>Data appears in Machine Monitor within 30 seconds</li>
+      <li>End of shift: press <span class="path">CTRL+C</span> in the window to stop</li>
+    </ul>
+    <div class="info">
+      💡 <b>Before the first shift:</b> make sure the team leader has set the product model in <b>CMMS → Production Capacity → Shift Setup</b>. The pusher reads this automatically — no typing needed at the PC.
+    </div>
+  </div>
+
+  <!-- Auto-Start / Background -->
+  <div class="step">
+    <div class="step-number">8</div>
+    <h2>🚀 Auto-Start on Windows Startup (Background Mode)</h2>
+    <p style="color:#94a3b8; font-size:14px; margin-bottom:14px;">
+      On first run, the script asks: <b style="color:#f1f5f9;">"Add to Windows Startup? (Y/N)"</b> — type <b style="color:#4ade80;">Y</b> and press Enter.
+    </p>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+      <div style="background:#0c2340; border:1px solid #1d4ed8; border-radius:8px; padding:14px;">
+        <div style="color:#60a5fa; font-weight:bold; margin-bottom:8px;">What happens when you type Y:</div>
+        <ul style="padding-left:16px; color:#94a3b8; font-size:13px; line-height:2.2;">
+          <li>Creates <span class="path">cmms_Startup.vbs</span> in the script folder</li>
+          <li>Copies it to Windows Startup folder</li>
+          <li>Every time the PC turns on, it starts automatically</li>
+          <li>Runs completely <b style="color:#f1f5f9;">in the background</b> — no window</li>
+          <li>All output is saved to <span class="path">omtp_log.txt</span></li>
+        </ul>
+      </div>
+      <div style="background:#1a2a1a; border:1px solid #166534; border-radius:8px; padding:14px;">
+        <div style="color:#4ade80; font-weight:bold; margin-bottom:8px;">What "background" means:</div>
+        <ul style="padding-left:16px; color:#94a3b8; font-size:13px; line-height:2.2;">
+          <li>No green window on screen</li>
+          <li>PC works normally — no interruptions</li>
+          <li>Data is still pushed to Machine Monitor every 30 seconds</li>
+          <li>Open <span class="path">omtp_log.txt</span> anytime to check status</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="color:#f1f5f9; font-size:14px; margin-bottom:8px;">📄 Reading the log file</h3>
+    <p style="color:#94a3b8; font-size:13px; margin-bottom:10px;">Open <span class="path">omtp_log.txt</span> (in the same folder as the .bat file) with Notepad to see what is happening:</p>
+    <div class="cmd">2026-03-22 08:15:00 [INFO] OMTP Log Pusher starting — API: https://..., Line: 1
+2026-03-22 08:15:01 [INFO] Reading: D:\OMTP_LOG\CPH2523\data\22-3-2026.csv
+2026-03-22 08:15:01 [INFO] Pushed 12 new rows from CPH2523/22-3-2026
+2026-03-22 08:15:31 [INFO] No new rows to push
+2026-03-22 08:16:01 [INFO] Pushed 3 new rows from CPH2523/22-3-2026</div>
+
+    <h3 style="color:#f1f5f9; font-size:14px; margin:14px 0 8px;">🛑 How to stop the background process</h3>
+    <ol style="padding-left:20px; color:#94a3b8; font-size:13px; line-height:2.4;">
+      <li>Press <span class="path">CTRL + ALT + DELETE</span> on the keyboard</li>
+      <li>Click <b>Task Manager</b></li>
+      <li>Click the <b>Processes</b> tab</li>
+      <li>Find <span class="path">python.exe</span> in the list</li>
+      <li>Right-click it → <b>End Task</b></li>
+    </ol>
+
+    <h3 style="color:#f1f5f9; font-size:14px; margin:14px 0 8px;">🗑️ How to remove from Windows Startup</h3>
+    <p style="color:#94a3b8; font-size:13px; margin-bottom:8px;">Delete the file <span class="path">cmms_Startup.vbs</span> from this folder:</p>
+    <div class="cmd">C:\Users\{YourUsername}\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\</div>
+    <div class="info" style="margin-top:10px;">
+      💡 Quick way to open that folder: Press <span class="path">Win + R</span>, type <span class="path">shell:startup</span> and press Enter. Delete <span class="path">cmms_Startup.vbs</span> from there.
+    </div>
+
+    <h3 style="color:#f1f5f9; font-size:14px; margin:14px 0 8px;">🔄 If you download a new script (e.g. after API key change)</h3>
+    <ol style="padding-left:20px; color:#94a3b8; font-size:13px; line-height:2.4;">
+      <li>Replace <span class="path">cmms_Start.bat</span> in the same folder with the new downloaded file</li>
+      <li>Run the new <span class="path">cmms_Start.bat</span> once — it will ask about startup again</li>
+      <li>Type <span class="path">Y</span> to reinstall the background launcher with the new key</li>
+    </ol>
+  </div>
+
+  <!-- Footer -->
+  <div style="text-align:center; padding:24px; color:#334155; font-size:12px;">
+    OPPO Factory CMMS — OMTP Log Pusher Guide v2.1 — Auto-Startup Edition
+  </div>
+
+</div>
+</body>
+</html>
