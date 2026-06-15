@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useGetTrainingPlans, useCreateTrainingPlan, useGetUsers } from "@workspace/api-client-react";
+import { useGetTrainingPlans, useCreateTrainingPlan, useUpdateTrainingPlan, useGetUsers } from "@workspace/api-client-react";
 import { Button, Input, Select, Card, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Badge, Modal, Label } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
-import { GraduationCap, Users } from "lucide-react";
+import { GraduationCap, Users, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { FilterBar, matchesDateFilter, matchesSearch, type FilterState } from "@/components/filter-bar";
@@ -20,9 +20,11 @@ export default function Training() {
   const { data: plans, isLoading } = useGetTrainingPlans();
   const { data: allUsers } = useGetUsers();
   const createMutation = useCreateTrainingPlan();
+  const updateMutation = useUpdateTrainingPlan();
   const { toast } = useToast();
   const { isMaintenance, isTeamLeader, isManager, isAdmin, user } = useAuth();
   const isStrictTeamLeader = isTeamLeader && !isManager && !isAdmin;
+  const canEdit = !isMaintenance && (isAdmin || isManager || isTeamLeader);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({ date: "", shift: "", search: "", status: "" });
@@ -30,6 +32,56 @@ export default function Training() {
   const [selectedParticipants, setSelectedParticipants] = useState<number[]>([]);
   const [participantSearch, setParticipantSearch] = useState("");
   const [formTeam, setFormTeam] = useState("");
+
+  // Edit state
+  const [editTarget, setEditTarget] = useState<any | null>(null);
+  const [editParticipants, setEditParticipants] = useState<number[]>([]);
+  const [editParticipantSearch, setEditParticipantSearch] = useState("");
+  const [editFormTeam, setEditFormTeam] = useState("");
+  const [editBusy, setEditBusy] = useState(false);
+
+  const handleEditOpen = (p: any) => {
+    setEditTarget(p);
+    setEditParticipants((p as any).participantIds ?? []);
+    setEditFormTeam((p as any).team ?? "");
+    setEditParticipantSearch("");
+  };
+  const handleEditClose = () => { setEditTarget(null); setEditParticipants([]); setEditParticipantSearch(""); setEditFormTeam(""); };
+
+  const toggleEditParticipant = (id: number) =>
+    setEditParticipants(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  const handleEditSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editTarget) return;
+    setEditBusy(true);
+    const fd = new FormData(e.currentTarget);
+    try {
+      await updateMutation.mutateAsync({
+        id: editTarget.id,
+        data: {
+          title: fd.get("title") as string,
+          trainerName: fd.get("trainerName") as string,
+          scheduledDate: fd.get("scheduledDate") as string,
+          location: fd.get("location") as string,
+          status: fd.get("status") as string,
+          team: editFormTeam || undefined,
+          participants: editParticipants as any,
+        } as any,
+      });
+      toast({ title: t("common.success") });
+      handleEditClose();
+    } catch (err: any) {
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
+    } finally {
+      setEditBusy(false);
+    }
+  };
+
+  const editFilteredUsers = (allUsers ?? []).filter(u =>
+    u.fullName.toLowerCase().includes(editParticipantSearch.toLowerCase()) ||
+    u.username.toLowerCase().includes(editParticipantSearch.toLowerCase())
+  );
 
   const toggleParticipant = (id: number) => {
     setSelectedParticipants(prev =>
@@ -140,6 +192,7 @@ export default function Training() {
                 <TableHead>{t("training.date")}</TableHead>
                 <TableHead>{t("training.location")}</TableHead>
                 <TableHead>{t("common.status")}</TableHead>
+                {canEdit && <TableHead className="text-end">{t("common.actions")}</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -179,6 +232,13 @@ export default function Training() {
                           {p.status}
                         </Badge>
                       </TableCell>
+                      {canEdit && (
+                        <TableCell className="text-end">
+                          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground hover:text-white hover:bg-white/10 border border-white/10" onClick={() => handleEditOpen(p)}>
+                            <Pencil className="w-3.5 h-3.5" />{t("common.edit")}
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })
@@ -187,6 +247,90 @@ export default function Training() {
           </Table>
         </div>
       </Card>
+
+      {/* Edit Training Plan Modal */}
+      {editTarget && (
+        <Modal isOpen onClose={handleEditClose} title={`${t("common.edit")} — ${editTarget.title}`}>
+          <form onSubmit={handleEditSave} className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t("training.topic")}</Label>
+              <Input name="title" required defaultValue={editTarget.title} />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t("training.trainer")}</Label>
+                <Input name="trainerName" defaultValue={editTarget.trainerName ?? ""} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("training.location")}</Label>
+                <Input name="location" defaultValue={editTarget.location ?? ""} />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t("training.date")}</Label>
+                <Input type="date" name="scheduledDate" required defaultValue={editTarget.scheduledDate ? editTarget.scheduledDate.split("T")[0] : ""} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("common.status")}</Label>
+                <Select name="status" defaultValue={editTarget.status}>
+                  <option value="scheduled">{t("training.status_scheduled")}</option>
+                  <option value="completed">{t("training.status_completed")}</option>
+                  <option value="cancelled">{t("training.status_cancelled")}</option>
+                </Select>
+              </div>
+            </div>
+            {!isStrictTeamLeader && (
+              <div className="space-y-2">
+                <Label>{t("teams.label")}</Label>
+                <Select value={editFormTeam} onChange={e => setEditFormTeam(e.target.value)}>
+                  <option value="">{t("teams.allTeams")}</option>
+                  {TEAMS.map(team => <option key={team} value={team} className="capitalize">{t(`teams.${team}`)}</option>)}
+                </Select>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                {t("training.participants")}
+                {editParticipants.length > 0 && (
+                  <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">{editParticipants.length}</span>
+                )}
+              </Label>
+              <Input placeholder={t("common.search")} value={editParticipantSearch} onChange={e => setEditParticipantSearch(e.target.value)} />
+              <div className="max-h-40 overflow-y-auto custom-scrollbar border border-white/10 rounded-lg divide-y divide-white/5">
+                {editFilteredUsers.map(u => {
+                  const uTeam = (u as any).team as string | null;
+                  return (
+                    <label key={u.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-white/5 transition-colors">
+                      <input type="checkbox" className="accent-primary" checked={editParticipants.includes(u.id)} onChange={() => toggleEditParticipant(u.id)} />
+                      <span className="text-sm text-white">{u.fullName}</span>
+                      {uTeam && <span className={`text-[10px] px-1.5 py-0.5 rounded border uppercase ms-auto ${TEAM_COLORS[uTeam] ?? ""}`}>{t(`teams.${uTeam}`)}</span>}
+                    </label>
+                  );
+                })}
+              </div>
+              {editParticipants.length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {editParticipants.map(id => {
+                    const u = (allUsers ?? []).find(x => x.id === id);
+                    return u ? (
+                      <span key={id} className="text-xs bg-primary/10 text-primary border border-primary/20 rounded px-2 py-0.5 flex items-center gap-1">
+                        {u.fullName}
+                        <button type="button" onClick={() => toggleEditParticipant(id)} className="ms-1 hover:text-red-400">×</button>
+                      </span>
+                    ) : null;
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 pt-4 border-t border-white/10">
+              <Button type="button" variant="ghost" onClick={handleEditClose}>{t("common.cancel")}</Button>
+              <Button type="submit" disabled={editBusy}>{editBusy ? t("common.loading") : t("common.save")}</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
       {!isMaintenance && (
         <Modal isOpen={isAddOpen} onClose={closeModal} title={t("training.addPlan")}>

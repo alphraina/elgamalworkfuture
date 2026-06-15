@@ -7,7 +7,7 @@ import {
 } from "@workspace/api-client-react";
 import { Button, Input, Select, Card, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Badge, Modal, Label } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
-import { Plus, CheckCircle, Clock, Timer, ScanLine, QrCode, X } from "lucide-react";
+import { Plus, CheckCircle, Clock, Timer, ScanLine, QrCode, X, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { FilterBar, matchesDateFilter, matchesShiftFilter, matchesSearch, type FilterState } from "@/components/filter-bar";
@@ -54,6 +54,40 @@ export default function Downtime() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [mode, setMode] = useState<"ongoing" | "with-end">("ongoing");
   const [resolveTarget, setResolveTarget] = useState<{ id: number; machineName: string; startTime: string } | null>(null);
+  const [editTarget, setEditTarget] = useState<any | null>(null);
+  const [editBusy, setEditBusy] = useState(false);
+
+  const canEditRecords = isAdmin || isManager;
+
+  const handleEditOpen = (r: any) => setEditTarget(r);
+  const handleEditClose = () => setEditTarget(null);
+
+  const handleEditSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editTarget) return;
+    setEditBusy(true);
+    const fd = new FormData(e.currentTarget);
+    try {
+      await updateMutation.mutateAsync({
+        id: editTarget.id,
+        data: {
+          reason: fd.get("reason") as string,
+          rootCause: fd.get("rootCause") as string,
+          category: fd.get("category") as string,
+          notes: fd.get("notes") as string || undefined,
+          startTime: fd.get("startTime") as string,
+          endTime: fd.get("endTime") ? (fd.get("endTime") as string) : undefined,
+          status: fd.get("status") as string,
+        } as any,
+      });
+      toast({ title: t("common.success") });
+      handleEditClose();
+    } catch (err: any) {
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
+    } finally {
+      setEditBusy(false);
+    }
+  };
   const [resolveForm, setResolveForm] = useState({ rootCause: "", endTime: new Date().toISOString().slice(0, 16) });
   const [filters, setFilters] = useState<FilterState>({ date: "", shift: "", search: "", status: "" });
   const [teamFilter, setTeamFilter] = useState<string>("");
@@ -303,11 +337,18 @@ export default function Downtime() {
                     </TableCell>
                     {!isMaintenance && (
                       <TableCell className="text-end">
-                        {r.status === "ongoing" && (
-                          <Button variant="outline" size="sm" onClick={() => openResolve(r as any)} disabled={updateMutation.isPending}>
-                            {t("downtime.resolve")}
-                          </Button>
-                        )}
+                        <div className="flex items-center justify-end gap-1.5">
+                          {canEditRecords && (
+                            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground hover:text-white hover:bg-white/10 border border-white/10" onClick={() => handleEditOpen(r)}>
+                              <Pencil className="w-3.5 h-3.5" />{t("common.edit")}
+                            </Button>
+                          )}
+                          {r.status === "ongoing" && (
+                            <Button variant="outline" size="sm" onClick={() => openResolve(r as any)} disabled={updateMutation.isPending}>
+                              {t("downtime.resolve")}
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     )}
                   </TableRow>
@@ -317,6 +358,59 @@ export default function Downtime() {
           </Table>
         </div>
       </Card>
+
+      {/* Edit Downtime Record Modal */}
+      {editTarget && (
+        <Modal isOpen onClose={handleEditClose} title={`${t("common.edit")} — ${editTarget.machineName}`}>
+          <form onSubmit={handleEditSave} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t("downtime.category")} *</Label>
+                <Select name="category" defaultValue={editTarget.category}>
+                  <option value="mechanical">{t("downtime.category_mechanical")}</option>
+                  <option value="electrical">{t("downtime.category_electrical")}</option>
+                  <option value="software">{t("downtime.category_software")}</option>
+                  <option value="material">{t("downtime.category_material")}</option>
+                  <option value="other">{t("downtime.category_other")}</option>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("common.status")}</Label>
+                <Select name="status" defaultValue={editTarget.status}>
+                  <option value="ongoing">{t("downtime.status_ongoing")}</option>
+                  <option value="resolved">{t("downtime.status_resolved")}</option>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t("downtime.startTime")} *</Label>
+                <Input type="datetime-local" name="startTime" required defaultValue={editTarget.startTime ? editTarget.startTime.slice(0, 16) : ""} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("downtime.endTime")}</Label>
+                <Input type="datetime-local" name="endTime" defaultValue={editTarget.endTime ? editTarget.endTime.slice(0, 16) : ""} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("common.description")} *</Label>
+              <Input name="reason" required defaultValue={editTarget.reason ?? ""} />
+            </div>
+            <div className="space-y-2">
+              <Label>{t("downtime.rootCause")} *</Label>
+              <textarea name="rootCause" rows={3} required defaultValue={editTarget.rootCause ?? ""} className={TEXTAREA_CLS} />
+            </div>
+            <div className="space-y-2">
+              <Label>{t("common.notes")} <span className="text-muted-foreground text-xs">({t("common.optional")})</span></Label>
+              <Input name="notes" defaultValue={editTarget.notes ?? ""} />
+            </div>
+            <div className="flex justify-end gap-2 pt-4 border-t border-white/10">
+              <Button type="button" variant="ghost" onClick={handleEditClose}>{t("common.cancel")}</Button>
+              <Button type="submit" disabled={editBusy}>{editBusy ? t("common.loading") : t("common.save")}</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
       {/* Add Downtime Modal */}
       <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title={t("downtime.addRecord")}>

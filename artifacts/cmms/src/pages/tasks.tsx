@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { useGetTasks, useCreateTask, type CreateTaskRequestPriority, type CreateTaskRequestType } from "@workspace/api-client-react";
+import { useGetTasks, useCreateTask, useUpdateTask, type CreateTaskRequestPriority, type CreateTaskRequestType } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Select, Card, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Badge, Modal, Label } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
-import { CheckSquare, CheckCircle2, LayoutGrid, LayoutList } from "lucide-react";
+import { CheckSquare, CheckCircle2, LayoutGrid, LayoutList, Pencil } from "lucide-react";
 import { CylinderProgress } from "@/components/cylinder-progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -25,10 +25,12 @@ export default function Tasks() {
   const { t } = useTranslation();
   const { data: tasks, isLoading } = useGetTasks();
   const createMutation = useCreateTask();
+  const updateMutation = useUpdateTask();
   const { toast } = useToast();
   const { user, isMaintenance, isTeamLeader, isManager, isAdmin } = useAuth();
   const queryClient = useQueryClient();
   const isStrictTeamLeader = isTeamLeader && !isManager && !isAdmin;
+  const canEdit = isAdmin || isManager || isTeamLeader;
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [allUsers, setAllUsers] = useState<AugUser[]>([]);
@@ -40,6 +42,52 @@ export default function Tasks() {
   const [filters, setFilters] = useState<FilterState>({ date: "", shift: "", search: "", status: "" });
   const [teamFilter, setTeamFilter] = useState("");
   const [viewMode, setViewMode] = useState<"list" | "cylinder">("list");
+
+  // Edit state
+  const [editTarget, setEditTarget] = useState<any | null>(null);
+  const [editAssignedToId, setEditAssignedToId] = useState("");
+  const [editFormTeam, setEditFormTeam] = useState("");
+  const [editBusy, setEditBusy] = useState(false);
+
+  const handleEditOpen = (tk: any) => {
+    setEditTarget(tk);
+    setEditAssignedToId(tk.assignedToId ? String(tk.assignedToId) : "");
+    setEditFormTeam((tk as any).assignedToTeam ?? "");
+  };
+  const handleEditClose = () => { setEditTarget(null); setEditAssignedToId(""); setEditFormTeam(""); };
+
+  const handleEditSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editTarget) return;
+    setEditBusy(true);
+    const fd = new FormData(e.currentTarget);
+    try {
+      await updateMutation.mutateAsync({
+        id: editTarget.id,
+        data: {
+          title: fd.get("title") as string,
+          description: fd.get("description") as string || undefined,
+          priority: fd.get("priority") as CreateTaskRequestPriority,
+          type: fd.get("type") as CreateTaskRequestType,
+          dueDate: fd.get("dueDate") as string || undefined,
+          status: fd.get("status") as string,
+          assignedToId: editAssignedToId ? Number(editAssignedToId) : undefined,
+        } as any,
+      });
+      toast({ title: t("common.success") });
+      handleEditClose();
+    } catch (err: any) {
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
+    } finally {
+      setEditBusy(false);
+    }
+  };
+
+  const editFilteredUsers = isStrictTeamLeader
+    ? allUsers.filter(u => !user?.team || u.team === user.team)
+    : editFormTeam
+      ? allUsers.filter(u => u.team === editFormTeam)
+      : allUsers;
 
   useEffect(() => {
     fetch(`${BASE}/api/users`, { credentials: "include" })
@@ -217,6 +265,11 @@ export default function Tasks() {
                   <div style={{ marginTop: "6px" }}>
                     <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "10px", fontWeight: 700, textTransform: "uppercase", background: bg, color }}>{task.status.replace("_"," ")}</span>
                   </div>
+                  {canEdit && (
+                    <button onClick={() => handleEditOpen(task)} style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", color: "hsl(222 16% 55%)", background: "hsl(222 16% 12%)", border: "1px solid hsl(222 16% 20%)", borderRadius: "6px", padding: "3px 8px", cursor: "pointer" }}>
+                      <Pencil size={10} /> {t("common.edit")}
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -284,17 +337,18 @@ export default function Tasks() {
                         )}
                       </TableCell>
                       <TableCell className="text-end">
-                        {canComplete && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10 gap-1"
-                            onClick={() => openCompleteModal({ id: tk.id, title: tk.title })}
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            {t("tasks.markComplete")}
-                          </Button>
-                        )}
+                        <div className="flex items-center justify-end gap-1.5">
+                          {canEdit && (
+                            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground hover:text-white hover:bg-white/10 border border-white/10" onClick={() => handleEditOpen(tk)}>
+                              <Pencil className="w-3.5 h-3.5" />{t("common.edit")}
+                            </Button>
+                          )}
+                          {canComplete && (
+                            <Button variant="ghost" size="sm" className="h-7 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10 gap-1" onClick={() => openCompleteModal({ id: tk.id, title: tk.title })}>
+                              <CheckCircle2 className="w-3.5 h-3.5" />{t("tasks.markComplete")}
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -304,6 +358,79 @@ export default function Tasks() {
           </Table>
         </div>
       </Card>}
+
+      {/* Edit Task Modal */}
+      {editTarget && (
+        <Modal isOpen onClose={handleEditClose} title={`${t("common.edit")} — ${editTarget.title}`}>
+          <form onSubmit={handleEditSave} className="space-y-4">
+            <div className="space-y-2">
+              <Label>{t("tasks.taskTitle")}</Label>
+              <Input name="title" required defaultValue={editTarget.title} />
+            </div>
+            <div className="space-y-2">
+              <Label>{t("tasks.description")}</Label>
+              <Input name="description" defaultValue={editTarget.description ?? ""} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t("common.type")}</Label>
+                <Select name="type" defaultValue={editTarget.type}>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="inspection">Inspection</option>
+                  <option value="repair">Repair</option>
+                  <option value="general">General</option>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("tasks.priority")}</Label>
+                <Select name="priority" defaultValue={editTarget.priority}>
+                  <option value="low">{t("tasks.priority_low")}</option>
+                  <option value="medium">{t("tasks.priority_medium")}</option>
+                  <option value="high">{t("tasks.priority_high")}</option>
+                  <option value="urgent">{t("tasks.priority_critical")}</option>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t("common.status")}</Label>
+                <Select name="status" defaultValue={editTarget.status}>
+                  <option value="pending">{t("tasks.status_pending")}</option>
+                  <option value="in_progress">{t("tasks.status_in_progress")}</option>
+                  <option value="completed">{t("tasks.status_completed")}</option>
+                  <option value="cancelled">{t("tasks.status_cancelled")}</option>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("tasks.dueDate")}</Label>
+                <Input type="date" name="dueDate" defaultValue={editTarget.dueDate ? editTarget.dueDate.split("T")[0] : ""} />
+              </div>
+            </div>
+            {!isStrictTeamLeader && (
+              <div className="space-y-2">
+                <Label>{t("teams.label")}</Label>
+                <Select value={editFormTeam} onChange={e => { setEditFormTeam(e.target.value); setEditAssignedToId(""); }}>
+                  <option value="">{t("teams.allTeams")}</option>
+                  {TEAMS.map(tm => <option key={tm} value={tm} className="capitalize">{t(`teams.${tm}`)}</option>)}
+                </Select>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>{t("tasks.assignedTo")}</Label>
+              <Select value={editAssignedToId} onChange={e => setEditAssignedToId(e.target.value)}>
+                <option value="">—</option>
+                {editFilteredUsers.map(u => (
+                  <option key={u.id} value={u.id}>{u.fullName}{u.team ? ` (${u.team})` : ""}</option>
+                ))}
+              </Select>
+            </div>
+            <div className="flex justify-end gap-2 pt-4 border-t border-white/10">
+              <Button type="button" variant="ghost" onClick={handleEditClose}>{t("common.cancel")}</Button>
+              <Button type="submit" disabled={editBusy}>{editBusy ? t("common.loading") : t("common.save")}</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
       {/* Mark Complete Modal */}
       {completingTask && (
