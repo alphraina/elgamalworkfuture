@@ -7,7 +7,7 @@ import {
   type CreatePMPlanRequestFrequency,
 } from "@workspace/api-client-react";
 import { Button, Input, Select, Modal, Label, Badge } from "@/components/ui";
-import { CalendarClock, ChevronLeft, ChevronRight, Users, X, LayoutGrid, CalendarDays, RefreshCw, CheckCircle2 } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight, Users, X, LayoutGrid, CalendarDays, RefreshCw, CheckCircle2, Pencil } from "lucide-react";
 import { CylinderProgress } from "@/components/cylinder-progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -77,13 +77,60 @@ export default function PM() {
   const [viewMode, setViewMode] = useState<"calendar" | "cylinder">("calendar");
   const [completingId, setCompletingId] = useState<number | null>(null);
 
+  // Edit state
+  const [editTarget, setEditTarget] = useState<any | null>(null);
+  const [editUserId, setEditUserId] = useState<string>("");
+  const [editUserSearch, setEditUserSearch] = useState<string>("");
+  const [editBusy, setEditBusy] = useState(false);
+
   const isStrictTeamLeader = isTeamLeader && !isManager && !isAdmin;
+
+  const canEditTasks = isAdmin || isManager || isTeamLeader;
 
   const TEAMS = [
     { value: "assembly", label: t("teams.assembly") },
     { value: "test", label: t("teams.test") },
     { value: "packaging", label: t("teams.packaging") },
   ] as const;
+
+  const handleEditOpen = (p: any) => {
+    setEditTarget(p);
+    setEditUserId(p.assignedToId ? String(p.assignedToId) : "");
+    setEditUserSearch("");
+  };
+
+  const handleEditClose = () => {
+    setEditTarget(null);
+    setEditUserId("");
+    setEditUserSearch("");
+  };
+
+  const handleEditSave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!editTarget) return;
+    setEditBusy(true);
+    const fd = new FormData(e.currentTarget);
+    try {
+      await updateMutation.mutateAsync({
+        id: editTarget.id,
+        data: {
+          title: fd.get("title") as string,
+          machineName: fd.get("machineName") as string,
+          frequency: fd.get("frequency") as string,
+          nextDueDate: fd.get("nextDueDate") as string,
+          status: fd.get("status") as string,
+          description: fd.get("description") as string || undefined,
+          assignedToId: editUserId ? Number(editUserId) : null,
+        } as any,
+      });
+      toast({ title: t("common.success") });
+      handleEditClose();
+    } catch (err: any) {
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
+    } finally {
+      setEditBusy(false);
+    }
+  };
 
   const handleMarkDone = async (planId: number) => {
     setCompletingId(planId);
@@ -304,6 +351,19 @@ export default function PM() {
                       color: plan.status === "completed" ? "#4ade80" : plan.status === "active" ? "#60a5fa" : plan.status === "paused" ? "#fb923c" : "#f87171",
                     }}>{plan.status}</span>
                   </div>
+                  {canEditTasks && (
+                    <button
+                      onClick={() => handleEditOpen(plan)}
+                      style={{
+                        marginTop: "8px", display: "flex", alignItems: "center", gap: "4px",
+                        fontSize: "10px", color: "hsl(222 16% 55%)", background: "hsl(222 16% 12%)",
+                        border: "1px solid hsl(222 16% 20%)", borderRadius: "6px", padding: "3px 8px",
+                        cursor: "pointer", transition: "all 0.15s",
+                      }}
+                    >
+                      <Pencil size={10} /> {t("common.edit")}
+                    </button>
+                  )}
                 </div>
               </div>
             );
@@ -446,8 +506,19 @@ export default function PM() {
                         {p.status}
                       </Badge>
                     </div>
-                    {canComplete && isNextDueDay && (
-                      <div className="flex justify-end">
+                    <div className="flex items-center justify-end gap-2">
+                      {canEditTasks && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="gap-1.5 text-muted-foreground hover:text-white hover:bg-white/10 border border-white/10 h-7 text-xs"
+                          onClick={(e) => { e.stopPropagation(); handleEditOpen(p); }}
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                          {t("common.edit")}
+                        </Button>
+                      )}
+                      {canComplete && isNextDueDay && (
                         <Button
                           size="sm"
                           variant="ghost"
@@ -458,14 +529,111 @@ export default function PM() {
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           {completingId === p.id ? "Saving…" : "Mark Done"}
                         </Button>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
         </div>
+      )}
+
+      {/* Edit Task Modal */}
+      {editTarget && (
+        <Modal isOpen onClose={handleEditClose} title={t("common.edit") + " — " + editTarget.title}>
+          <form onSubmit={handleEditSave} className="space-y-4">
+            {/* Status banner for completed tasks */}
+            {editTarget.status === "completed" && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                This task was marked done. You can update any field and change the status below.
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>{t("common.name")}</Label>
+              <Input name="title" required defaultValue={editTarget.title} placeholder="e.g. Monthly SMT Calibration" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t("pm.machine")}</Label>
+                <Input name="machineName" required defaultValue={editTarget.machineName} />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("pm.frequency")}</Label>
+                <Select name="frequency" required defaultValue={editTarget.frequency}>
+                  <option value="daily">{t("common.day")}</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="quarterly">Quarterly</option>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>{t("pm.nextDue")}</Label>
+                <Input
+                  type="date"
+                  name="nextDueDate"
+                  required
+                  defaultValue={editTarget.nextDueDate ? editTarget.nextDueDate.split("T")[0] : ""}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>{t("common.status")}</Label>
+                <Select name="status" defaultValue={editTarget.status === "completed" ? "active" : editTarget.status}>
+                  <option value="active">{t("pm.status_scheduled")}</option>
+                  <option value="overdue">{t("pm.status_overdue")}</option>
+                  <option value="paused">{t("pm.status_skipped")}</option>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>{t("common.notes")} <span className="text-muted-foreground font-normal text-xs">({t("common.optional")})</span></Label>
+              <Input name="description" defaultValue={editTarget.description ?? ""} placeholder="Additional notes or instructions…" />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                {t("pm.assignee")}
+                {editUserId && (allUsers ?? []).find(u => u.id === Number(editUserId)) && (
+                  <span className="text-xs bg-primary/20 text-primary px-1.5 py-0.5 rounded">
+                    {(allUsers ?? []).find(u => u.id === Number(editUserId))?.fullName}
+                  </span>
+                )}
+              </Label>
+              <Input
+                placeholder={t("common.search")}
+                value={editUserSearch}
+                onChange={e => setEditUserSearch(e.target.value)}
+              />
+              <div className="max-h-40 overflow-y-auto custom-scrollbar border border-white/10 rounded-lg divide-y divide-white/5">
+                <label className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-white/5 transition-colors">
+                  <input type="radio" className="accent-primary" checked={editUserId === ""} onChange={() => setEditUserId("")} />
+                  <span className="text-sm text-muted-foreground italic">—</span>
+                </label>
+                {(allUsers ?? [])
+                  .filter(u => {
+                    const q = editUserSearch.toLowerCase();
+                    return u.fullName.toLowerCase().includes(q) || u.username.toLowerCase().includes(q);
+                  })
+                  .map(u => (
+                    <label key={u.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-white/5 transition-colors">
+                      <input type="radio" className="accent-primary" checked={editUserId === String(u.id)} onChange={() => setEditUserId(String(u.id))} />
+                      <span className="text-sm text-white">{u.fullName}</span>
+                      {(u as any).team && <TeamBadge team={(u as any).team} />}
+                      <span className="text-xs text-muted-foreground ms-auto">{u.username}</span>
+                    </label>
+                  ))
+                }
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4 border-t border-white/10">
+              <Button type="button" variant="ghost" onClick={handleEditClose}>{t("common.cancel")}</Button>
+              <Button type="submit" disabled={editBusy}>{editBusy ? t("common.loading") : t("common.save")}</Button>
+            </div>
+          </form>
+        </Modal>
       )}
 
       {/* Add Task Modal */}
