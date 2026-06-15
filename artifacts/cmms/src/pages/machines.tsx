@@ -76,6 +76,14 @@ function useMachines() {
   });
 }
 
+function useProductionLines() {
+  return useQuery<{ id: number; name: string; team: string | null }[]>({
+    queryKey: ["production-lines"],
+    queryFn: () => fetch(`${BASE}/api/production/lines`, { credentials: "include" }).then(r => r.json()),
+    staleTime: 60_000,
+  });
+}
+
 function useMachineHistory(machineId: number | null) {
   return useQuery<HistoryResponse>({
     queryKey: ["machine-history", machineId],
@@ -100,6 +108,7 @@ export default function Machines() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const { data: machines, isLoading } = useMachines();
+  const { data: productionLines } = useProductionLines();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isAdmin = user?.role === "admin";
@@ -898,7 +907,16 @@ export default function Machines() {
             </div>
             <div className="space-y-2">
               <Label>{t("machines.line")} <span className="text-muted-foreground text-xs">({t("common.optional")})</span></Label>
-              <Input type="number" value={form.lineId} onChange={(e) => setForm((f) => ({ ...f, lineId: e.target.value }))} placeholder="Line ID" />
+              <select
+                value={form.lineId}
+                onChange={(e) => setForm((f) => ({ ...f, lineId: e.target.value }))}
+                className="w-full h-9 rounded-md border border-input bg-background/50 px-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="" className="bg-background">—</option>
+                {(productionLines ?? []).map(l => (
+                  <option key={l.id} value={l.id} className="bg-background">{l.name}</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -967,7 +985,16 @@ export default function Machines() {
             </div>
             <div className="space-y-2">
               <Label>{t("machines.line")}</Label>
-              <Input type="number" value={editForm.lineId} onChange={(e) => setEditForm((f) => ({ ...f, lineId: e.target.value }))} />
+              <select
+                value={editForm.lineId}
+                onChange={(e) => setEditForm((f) => ({ ...f, lineId: e.target.value }))}
+                className="w-full h-9 rounded-md border border-input bg-background/50 px-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="" className="bg-background">—</option>
+                {(productionLines ?? []).map(l => (
+                  <option key={l.id} value={l.id} className="bg-background">{l.name}</option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="space-y-2">

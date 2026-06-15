@@ -320,58 +320,71 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Teams Production Overview */}
-      {liveSetups.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {(["assembly", "test"] as const).map(team => {
-            const teamLabel = team === "assembly" ? t("teams.assembly") : t("teams.test");
-            const teamColor = team === "assembly"
-              ? { border: "border-blue-400/40", bg: "bg-blue-400/5", icon: "text-blue-400", bar: "bg-blue-400", badge: "bg-blue-400/15 text-blue-300 border-blue-400/30" }
-              : { border: "border-amber-400/40", bg: "bg-amber-400/5", icon: "text-amber-400", bar: "bg-amber-400", badge: "bg-amber-400/15 text-amber-300 border-amber-400/30" };
-            const teamSetups = liveSetups.filter(s => s.assignedUserTeam === team);
-            const teamLineIds = teamSetups.map(s => s.lineId);
-            const teamTarget = teamSetups.reduce((s, setup) => s + (setup.totalCapacityTarget ?? 0), 0);
-            const teamActual = liveRecords.filter(r => teamLineIds.includes(r.lineId)).reduce((s, r) => s + (r.actualCapacity ?? 0), 0);
-            const pct = teamTarget > 0 ? Math.min(Math.round((teamActual / teamTarget) * 100), 100) : 0;
-            const activeLinesCount = teamSetups.length;
-            return (
-              <Card key={team} className={`border ${teamColor.border} ${teamColor.bg}`}>
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Activity className={`w-4 h-4 ${teamColor.icon}`} />
-                      <span className="font-semibold text-white">{teamLabel}</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold uppercase tracking-wider ${teamColor.badge}`}>
-                        {activeLinesCount} {t("common.lines")}
-                      </span>
-                    </div>
-                    <span className="text-xs text-muted-foreground capitalize">{currentShift}</span>
-                  </div>
-                  <div className="flex items-end gap-2 mb-2">
-                    <span className="text-3xl font-mono font-bold text-white">{teamActual.toLocaleString()}</span>
-                    {teamTarget > 0 && (
-                      <span className="text-sm text-muted-foreground mb-1">/ {teamTarget.toLocaleString()}</span>
-                    )}
-                  </div>
-                  {teamTarget > 0 ? (
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full rounded-full transition-all ${pct >= 80 ? "bg-emerald-400" : pct >= 50 ? "bg-amber-400" : "bg-red-400"}`}
-                          style={{ width: `${pct}%` }}
-                        />
+      {/* Teams Production Overview — dynamic from live setup data */}
+      {liveSetups.length > 0 && (() => {
+        const liveTeams = Array.from(new Set(liveSetups.map(s => s.assignedUserTeam).filter((x): x is string => !!x)));
+        const TEAM_PALETTE_DASH = [
+          { border: "border-blue-400/40",    bg: "bg-blue-400/5",    icon: "text-blue-400",    badge: "bg-blue-400/15 text-blue-300 border-blue-400/30" },
+          { border: "border-amber-400/40",   bg: "bg-amber-400/5",   icon: "text-amber-400",   badge: "bg-amber-400/15 text-amber-300 border-amber-400/30" },
+          { border: "border-emerald-400/40", bg: "bg-emerald-400/5", icon: "text-emerald-400", badge: "bg-emerald-400/15 text-emerald-300 border-emerald-400/30" },
+          { border: "border-purple-400/40",  bg: "bg-purple-400/5",  icon: "text-purple-400",  badge: "bg-purple-400/15 text-purple-300 border-purple-400/30" },
+          { border: "border-pink-400/40",    bg: "bg-pink-400/5",    icon: "text-pink-400",    badge: "bg-pink-400/15 text-pink-300 border-pink-400/30" },
+          { border: "border-cyan-400/40",    bg: "bg-cyan-400/5",    icon: "text-cyan-400",    badge: "bg-cyan-400/15 text-cyan-300 border-cyan-400/30" },
+        ];
+        const hashTeamColor = (team: string) => {
+          let h = 0; for (let i = 0; i < team.length; i++) h = team.charCodeAt(i) + ((h << 5) - h);
+          return TEAM_PALETTE_DASH[Math.abs(h) % TEAM_PALETTE_DASH.length];
+        };
+        if (liveTeams.length === 0) return null;
+        const cols = liveTeams.length === 1 ? "grid-cols-1" : liveTeams.length === 2 ? "sm:grid-cols-2" : "sm:grid-cols-3";
+        return (
+          <div className={`grid grid-cols-1 ${cols} gap-4`}>
+            {liveTeams.map(team => {
+              const teamColor = hashTeamColor(team);
+              const teamSetups = liveSetups.filter(s => s.assignedUserTeam === team);
+              const teamLineIds = teamSetups.map(s => s.lineId);
+              const teamTarget = teamSetups.reduce((s, setup) => s + (setup.totalCapacityTarget ?? 0), 0);
+              const teamActual = liveRecords.filter(r => teamLineIds.includes(r.lineId)).reduce((s, r) => s + (r.actualCapacity ?? 0), 0);
+              const pct = teamTarget > 0 ? Math.min(Math.round((teamActual / teamTarget) * 100), 100) : 0;
+              return (
+                <Card key={team} className={`border ${teamColor.border} ${teamColor.bg}`}>
+                  <CardContent className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Activity className={`w-4 h-4 ${teamColor.icon}`} />
+                        <span className="font-semibold text-white">{team}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold uppercase tracking-wider ${teamColor.badge}`}>
+                          {teamSetups.length} {t("common.lines")}
+                        </span>
                       </div>
-                      <span className="text-xs font-semibold text-white shrink-0">{pct}%</span>
+                      <span className="text-xs text-muted-foreground capitalize">{currentShift}</span>
                     </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground italic">{t("production.setup")} targets to see progress</p>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                    <div className="flex items-end gap-2 mb-2">
+                      <span className="text-3xl font-mono font-bold text-white">{teamActual.toLocaleString()}</span>
+                      {teamTarget > 0 && (
+                        <span className="text-sm text-muted-foreground mb-1">/ {teamTarget.toLocaleString()}</span>
+                      )}
+                    </div>
+                    {teamTarget > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${pct >= 80 ? "bg-emerald-400" : pct >= 50 ? "bg-amber-400" : "bg-red-400"}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-semibold text-white shrink-0">{pct}%</span>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground italic">{t("production.setup")} targets to see progress</p>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart */}

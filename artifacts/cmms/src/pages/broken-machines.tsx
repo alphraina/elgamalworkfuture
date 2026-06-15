@@ -63,6 +63,12 @@ export default function BrokenMachines() {
     enabled: isReportOpen,
   });
 
+  const { data: productionLines } = useQuery<{ id: number; name: string }[]>({
+    queryKey: ["production-lines"],
+    queryFn: () => fetch(`${BASE}/api/production/lines`, { credentials: "include" }).then(r => r.json()),
+    staleTime: 60_000,
+  });
+
   const handleQRScan = (code: string) => {
     setShowQRScanner(false);
     setScannedCode(code);
@@ -367,7 +373,17 @@ export default function BrokenMachines() {
           {scannedCode && !scannedMachine && (
             <div className="space-y-2">
               <Label>{t("common.line")} *</Label>
-              <Input type="number" name="lineId" required placeholder="e.g. 2" />
+              <select
+                name="lineId"
+                required
+                defaultValue=""
+                className="w-full h-9 rounded-md border border-input bg-background/50 px-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="" disabled className="bg-background">— {t("common.select")} —</option>
+                {(productionLines ?? []).map(l => (
+                  <option key={l.id} value={l.id} className="bg-background">{l.name}</option>
+                ))}
+              </select>
             </div>
           )}
 

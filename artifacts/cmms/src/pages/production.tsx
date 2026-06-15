@@ -49,7 +49,7 @@ export default function Production() {
   const [tab, setTab] = useState<"setup" | "grid" | "report">("grid");
   const [selDate, setSelDate] = useState(today);
   const [selShift, setSelShift] = useState<"day" | "night">("day");
-  const [teamTab, setTeamTab] = useState<"all" | "assembly" | "test" | "packaging">("all");
+  const [teamTab, setTeamTab] = useState<string>("all");
 
   const [shiftSetups, setShiftSetups] = useState<ShiftSetup[]>([]);
   const [setupDraft, setSetupDraft] = useState<Record<number, { assignedUserId: string; totalCapacityTarget: string; productModel: string }>>({});
@@ -171,12 +171,27 @@ export default function Production() {
   const allGridLines = (lines ?? []).slice().sort((a, b) => a.id - b.id);
   const gridLines = teamTab === "all"
     ? allGridLines
-    : allGridLines.filter(l => l.team === teamTab);
+    : allGridLines.filter(l => (l.team ?? "") === teamTab);
 
-  const TEAM_STYLES = {
-    assembly: { label: t("teams.assembly"),  color: "text-blue-400",    border: "border-blue-400/60",    bg: "bg-blue-400/10",    active: "bg-blue-400/20 border-blue-400 text-blue-300" },
-    test:     { label: t("teams.test"),      color: "text-amber-400",   border: "border-amber-400/60",   bg: "bg-amber-400/10",   active: "bg-amber-400/20 border-amber-400 text-amber-300" },
-    packaging:{ label: t("teams.packaging"), color: "text-emerald-400", border: "border-emerald-400/60", bg: "bg-emerald-400/10", active: "bg-emerald-400/20 border-emerald-400 text-emerald-300" },
+  // Derive unique teams dynamically from actual line data
+  const uniqueTeams = Array.from(new Set(
+    allGridLines.map(l => l.team).filter((t): t is string => !!t)
+  ));
+
+  const TEAM_PALETTE = [
+    { color: "text-blue-400",    border: "border-blue-400/60",    bg: "bg-blue-400/10",    active: "bg-blue-400/20 border-blue-400 text-blue-300" },
+    { color: "text-amber-400",   border: "border-amber-400/60",   bg: "bg-amber-400/10",   active: "bg-amber-400/20 border-amber-400 text-amber-300" },
+    { color: "text-emerald-400", border: "border-emerald-400/60", bg: "bg-emerald-400/10", active: "bg-emerald-400/20 border-emerald-400 text-emerald-300" },
+    { color: "text-purple-400",  border: "border-purple-400/60",  bg: "bg-purple-400/10",  active: "bg-purple-400/20 border-purple-400 text-purple-300" },
+    { color: "text-pink-400",    border: "border-pink-400/60",    bg: "bg-pink-400/10",    active: "bg-pink-400/20 border-pink-400 text-pink-300" },
+    { color: "text-cyan-400",    border: "border-cyan-400/60",    bg: "bg-cyan-400/10",    active: "bg-cyan-400/20 border-cyan-400 text-cyan-300" },
+    { color: "text-rose-400",    border: "border-rose-400/60",    bg: "bg-rose-400/10",    active: "bg-rose-400/20 border-rose-400 text-rose-300" },
+    { color: "text-lime-400",    border: "border-lime-400/60",    bg: "bg-lime-400/10",    active: "bg-lime-400/20 border-lime-400 text-lime-300" },
+  ];
+  const teamStyle = (team: string) => {
+    let hash = 0;
+    for (let i = 0; i < team.length; i++) hash = team.charCodeAt(i) + ((hash << 5) - hash);
+    return TEAM_PALETTE[Math.abs(hash) % TEAM_PALETTE.length];
   };
 
   return (
@@ -202,23 +217,35 @@ export default function Production() {
             <option value="night">{t("attendance.shift_night")}</option>
           </Select>
         </div>
-        <div className="flex items-center gap-1.5 ms-auto">
-          <Layers className="w-4 h-4 text-muted-foreground" />
-          {(["all", "assembly", "test", "packaging"] as const).map(t2 => {
-            const style = t2 === "all"
-              ? { label: t("common.all"), inactive: "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white", active: "bg-white/15 text-white border border-white/20" }
-              : { label: TEAM_STYLES[t2].label, inactive: `bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white border border-transparent`, active: TEAM_STYLES[t2].active + " border" };
-            return (
-              <button
-                key={t2}
-                onClick={() => setTeamTab(t2)}
-                className={cn("px-3 py-1 rounded-md text-xs font-medium transition-colors", teamTab === t2 ? style.active : style.inactive)}
-              >
-                {style.label}
-              </button>
-            );
-          })}
-        </div>
+        {uniqueTeams.length > 0 && (
+          <div className="flex items-center gap-1.5 ms-auto flex-wrap">
+            <Layers className="w-4 h-4 text-muted-foreground" />
+            <button
+              onClick={() => setTeamTab("all")}
+              className={cn("px-3 py-1 rounded-md text-xs font-medium transition-colors border",
+                teamTab === "all"
+                  ? "bg-white/15 text-white border-white/20"
+                  : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white border-transparent"
+              )}
+            >
+              {t("common.all")}
+            </button>
+            {uniqueTeams.map(team => {
+              const st = teamStyle(team);
+              return (
+                <button
+                  key={team}
+                  onClick={() => setTeamTab(teamTab === team ? "all" : team)}
+                  className={cn("px-3 py-1 rounded-md text-xs font-medium transition-colors border",
+                    teamTab === team ? st.active : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white border-transparent"
+                  )}
+                >
+                  {team}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
@@ -311,13 +338,13 @@ export default function Production() {
                 </th>
                 {gridLines.map(line => {
                   const setup = shiftSetups.find(s => s.lineId === line.id);
-                  const lineTeam = (line?.team ?? null) as "assembly" | "test" | "packaging" | null;
+                  const lineTeam = line?.team ?? null;
                   return (
                     <th key={line.id} className="px-1 py-2 text-center text-xs font-semibold border-b border-white/10 min-w-[60px]">
                       <p className="text-white text-[11px]">{line.name}</p>
-                      {teamTab === "all" && lineTeam && TEAM_STYLES[lineTeam] && (
-                        <p className={cn("text-[8px] font-bold uppercase tracking-wider mt-0.5", TEAM_STYLES[lineTeam].color)}>
-                          {TEAM_STYLES[lineTeam].label}
+                      {teamTab === "all" && lineTeam && (
+                        <p className={cn("text-[8px] font-bold uppercase tracking-wider mt-0.5", teamStyle(lineTeam).color)}>
+                          {lineTeam}
                         </p>
                       )}
                       {setup?.assignedUserName && (
@@ -422,19 +449,19 @@ export default function Production() {
             <p className="text-sm text-muted-foreground">{selDate} — {selShift}</p>
             <Button variant="outline" size="sm" onClick={loadReport}>{t("common.refresh")}</Button>
           </div>
-          {/* Per-team summary cards */}
-          {reportLoaded && report.length > 0 && (
-            <div className="grid grid-cols-3 gap-4">
-              {(["assembly", "test", "packaging"] as const).map(team => {
+          {/* Per-team summary cards — dynamic from actual line zones */}
+          {reportLoaded && report.length > 0 && uniqueTeams.length > 0 && (
+            <div className={cn("grid gap-4", uniqueTeams.length === 1 ? "grid-cols-1" : uniqueTeams.length === 2 ? "grid-cols-2" : "grid-cols-3")}>
+              {uniqueTeams.map(team => {
                 const teamLineIds = allGridLines.filter(l => l.team === team).map(l => l.id);
                 const teamRows = report.filter(r => teamLineIds.includes(r.lineId));
                 const total = teamRows.reduce((s, r) => s + r.totalPhones, 0);
                 const maxPossible = HOUR_TARGET * 10 * teamLineIds.length;
                 const pct = maxPossible > 0 ? Math.min(Math.round((total / maxPossible) * 100), 100) : 0;
-                const st = TEAM_STYLES[team];
+                const st = teamStyle(team);
                 return (
                   <div key={team} className={cn("rounded-xl border p-4 space-y-2", st.border, st.bg)}>
-                    <p className={cn("text-xs font-bold uppercase tracking-wider", st.color)}>{st.label}</p>
+                    <p className={cn("text-xs font-bold uppercase tracking-wider", st.color)}>{team}</p>
                     <p className="text-2xl font-mono font-bold text-white">{total.toLocaleString()}</p>
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
@@ -475,15 +502,15 @@ export default function Production() {
                         });
                     return filteredReport.map(row => {
                       const line = allGridLines.find(l => l.id === row.lineId);
-                      const lineTeam = (line?.team ?? null) as "assembly" | "test" | "packaging" | null;
+                      const lineTeam = line?.team ?? null;
                       const maxPossible = HOUR_TARGET * 10;
                       const pct = Math.round((row.totalPhones / maxPossible) * 100);
                       return (
                         <TableRow key={row.lineId}>
                           <TableCell className="font-semibold text-white">{row.lineName}</TableCell>
                           <TableCell>
-                            {lineTeam && TEAM_STYLES[lineTeam] ? (
-                              <span className={cn("text-xs font-bold", TEAM_STYLES[lineTeam].color)}>{TEAM_STYLES[lineTeam].label}</span>
+                            {lineTeam ? (
+                              <span className={cn("text-xs font-bold", teamStyle(lineTeam).color)}>{lineTeam}</span>
                             ) : <span className="text-muted-foreground">—</span>}
                           </TableCell>
                           <TableCell className="text-end font-mono font-bold text-lg text-white">{row.totalPhones.toLocaleString()}</TableCell>

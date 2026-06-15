@@ -68,6 +68,12 @@ export default function Downtime() {
     enabled: isAddOpen,
   });
 
+  const { data: productionLines } = useQuery<{ id: number; name: string }[]>({
+    queryKey: ["production-lines"],
+    queryFn: () => fetch(`${BASE}/api/production/lines`, { credentials: "include" }).then(r => r.json()),
+    staleTime: 60_000,
+  });
+
   const handleQRScan = (code: string) => {
     setShowQRScanner(false);
     setScannedCode(code);
@@ -394,13 +400,17 @@ export default function Downtime() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>{t("downtime.lineId")} *</Label>
-              <Input
-                type="number"
+              <select
                 name="lineId"
                 required={!scannedMachine?.lineId}
                 defaultValue={scannedMachine?.lineId ?? ""}
-                placeholder="e.g. 1"
-              />
+                className="w-full h-9 rounded-md border border-input bg-background/50 px-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="" className="bg-background">— {t("common.select")} —</option>
+                {(productionLines ?? []).map(l => (
+                  <option key={l.id} value={l.id} className="bg-background">{l.name}</option>
+                ))}
+              </select>
             </div>
           </div>
 
