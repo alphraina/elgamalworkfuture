@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import {
   PlusCircle, Pencil, Trash2, CheckCircle2, XCircle, Activity,
-  Factory, Save, X, AlertTriangle, ToggleLeft, ToggleRight,
+  Factory, Save, X, AlertTriangle, ToggleLeft, ToggleRight, RefreshCw,
 } from "lucide-react";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -32,39 +32,30 @@ interface User {
   role: string;
 }
 
-const TEAM_OPTIONS = [
-  { value: "", label: "— No team —" },
-  { value: "assembly", label: "Assembly" },
-  { value: "test", label: "Testing / QC" },
-  { value: "packaging", label: "Packaging" },
-  { value: "machining", label: "Machining" },
-  { value: "welding", label: "Welding" },
-  { value: "painting", label: "Painting" },
-  { value: "warehouse", label: "Warehouse" },
-  { value: "other", label: "Other" },
+const TEAM_SUGGESTIONS = [
+  "Assembly", "Test / QC", "Packaging", "Machining", "Stamping",
+  "Enamel Cleaning", "Welding", "Painting", "Warehouse", "Final Inspection",
 ];
 
-const TEAM_COLORS: Record<string, string> = {
-  assembly:  "bg-blue-500/15 text-blue-400 border-blue-500/20",
-  test:      "bg-purple-500/15 text-purple-400 border-purple-500/20",
-  packaging: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
-  machining: "bg-orange-500/15 text-orange-400 border-orange-500/20",
-  welding:   "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
-  painting:  "bg-pink-500/15 text-pink-400 border-pink-500/20",
-  warehouse: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
-  other:     "bg-white/10 text-muted-foreground border-white/10",
-};
+const TEAM_PALETTE = [
+  "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  "bg-purple-500/15 text-purple-400 border-purple-500/20",
+  "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+  "bg-orange-500/15 text-orange-400 border-orange-500/20",
+  "bg-yellow-500/15 text-yellow-400 border-yellow-500/20",
+  "bg-pink-500/15 text-pink-400 border-pink-500/20",
+  "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
+  "bg-rose-500/15 text-rose-400 border-rose-500/20",
+  "bg-lime-500/15 text-lime-400 border-lime-500/20",
+  "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
+];
 
-const TEAM_LABELS: Record<string, string> = {
-  assembly:  "Assembly",
-  test:      "Testing / QC",
-  packaging: "Packaging",
-  machining: "Machining",
-  welding:   "Welding",
-  painting:  "Painting",
-  warehouse: "Warehouse",
-  other:     "Other",
-};
+function teamColor(team: string | null): string {
+  if (!team) return "bg-white/10 text-muted-foreground border-white/10";
+  let hash = 0;
+  for (let i = 0; i < team.length; i++) hash = team.charCodeAt(i) + ((hash << 5) - hash);
+  return TEAM_PALETTE[Math.abs(hash) % TEAM_PALETTE.length];
+}
 
 const INPUT = "bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 w-full";
 const SELECT = `${INPUT} [&>option]:bg-[#0e1623] [&>option]:text-white`;
@@ -80,6 +71,7 @@ export default function ProductionLines() {
   const [form, setForm] = useState(emptyForm());
   const [editingId, setEditingId] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [error, setError] = useState("");
 
@@ -128,6 +120,16 @@ export default function ProductionLines() {
     onError: (e: Error) => setError(e.message),
   });
 
+  const clearAllMutation = useMutation({
+    mutationFn: async () => {
+      for (const line of lines) {
+        await apiFetch(`/production/lines/${line.id}`, { method: "DELETE" });
+      }
+    },
+    onSuccess: () => { invalidate(); setConfirmClearAll(false); },
+    onError: (e: Error) => setError(e.message),
+  });
+
   const toggleActive = (line: Line) => updateMutation.mutate({ id: line.id, body: { isActive: !line.isActive } });
 
   function startEdit(line: Line) {
@@ -148,7 +150,7 @@ export default function ProductionLines() {
     const body = {
       name: form.name.trim(),
       description: form.description.trim() || null,
-      team: form.team || null,
+      team: form.team.trim() || null,
       targetCapacityPerHour: Number(form.targetCapacityPerHour),
       minimumCapacityPerHour: Number(form.minimumCapacityPerHour),
       responsibleUserId: form.responsibleUserId ? Number(form.responsibleUserId) : null,
@@ -161,7 +163,7 @@ export default function ProductionLines() {
     const body = {
       name: form.name.trim(),
       description: form.description.trim() || null,
-      team: form.team || null,
+      team: form.team.trim() || null,
       targetCapacityPerHour: Number(form.targetCapacityPerHour),
       minimumCapacityPerHour: Number(form.minimumCapacityPerHour),
       responsibleUserId: form.responsibleUserId ? Number(form.responsibleUserId) : null,
@@ -187,21 +189,56 @@ export default function ProductionLines() {
           </p>
         </div>
         {isAdmin && (
-          <button
-            onClick={() => { setShowAdd(true); setForm(emptyForm()); setEditingId(null); setError(""); }}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            <PlusCircle className="w-4 h-4" />
-            Add Line
-          </button>
+          <div className="flex items-center gap-2">
+            {lines.length > 0 && (
+              <button
+                onClick={() => setConfirmClearAll(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-white/10 text-muted-foreground hover:text-white hover:border-white/20 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Clear all
+              </button>
+            )}
+            <button
+              onClick={() => { setShowAdd(true); setForm(emptyForm()); setEditingId(null); setError(""); }}
+              className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <PlusCircle className="w-4 h-4" />
+              Add Line
+            </button>
+          </div>
         )}
       </div>
+
+      {/* Clear All Confirm */}
+      {confirmClearAll && (
+        <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-5 flex items-start gap-4">
+          <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-sm text-white font-semibold">Delete all {lines.length} lines?</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              All existing lines will be removed. Historical production records will be preserved but will no longer reference a line. You can then add your own custom lines.
+            </p>
+          </div>
+          <div className="flex gap-2 flex-shrink-0">
+            <button onClick={() => setConfirmClearAll(false)} className="px-3 py-1.5 text-sm rounded-lg border border-white/10 text-muted-foreground hover:text-white">Cancel</button>
+            <button
+              onClick={() => clearAllMutation.mutate()}
+              disabled={clearAllMutation.isPending}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 disabled:opacity-50"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              {clearAllMutation.isPending ? "Deleting…" : "Yes, clear all"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Add Line Form */}
       {showAdd && (
         <div className="bg-card border border-primary/30 rounded-xl p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-white">New Production Line</h3>
+            <h3 className="text-sm font-semibold text-white">New Production Line / Station</h3>
             <button onClick={() => setShowAdd(false)} className="text-muted-foreground hover:text-white"><X className="w-4 h-4" /></button>
           </div>
           <LineForm form={form} setForm={setForm} supervisors={supervisors} />
@@ -229,8 +266,19 @@ export default function ProductionLines() {
       ) : lines.length === 0 ? (
         <div className="bg-card border border-white/10 rounded-xl p-12 text-center">
           <Factory className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
-          <p className="text-white font-medium">No production lines yet</p>
-          <p className="text-sm text-muted-foreground mt-1">Click "Add Line" to set up your first production line.</p>
+          <p className="text-white font-medium">No production lines configured</p>
+          <p className="text-sm text-muted-foreground mt-1 mb-4">
+            Add your own lines — name them anything: "Machine 1 Stamping", "Enamel Cleaning", "Assembly Line 1", etc.
+          </p>
+          {isAdmin && (
+            <button
+              onClick={() => { setShowAdd(true); setForm(emptyForm()); }}
+              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <PlusCircle className="w-4 h-4" />
+              Add First Line
+            </button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -280,20 +328,17 @@ export default function ProductionLines() {
               ) : (
                 /* ─── View mode ─── */
                 <div className="p-4 flex items-center gap-4 flex-wrap">
-                  {/* Left: status dot */}
                   <div className="flex-shrink-0">
                     {line.isActive
                       ? <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                       : <XCircle className="w-5 h-5 text-muted-foreground" />}
                   </div>
-
-                  {/* Middle: info */}
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-semibold text-white">{line.name}</span>
                       {line.team && (
-                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${TEAM_COLORS[line.team] ?? TEAM_COLORS.other}`}>
-                          {TEAM_LABELS[line.team] ?? line.team}
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${teamColor(line.team)}`}>
+                          {line.team}
                         </span>
                       )}
                       {!line.isActive && (
@@ -309,8 +354,6 @@ export default function ProductionLines() {
                       {line.description && <span className="truncate max-w-xs text-muted-foreground/70">{line.description}</span>}
                     </div>
                   </div>
-
-                  {/* Right: actions (admin only) */}
                   {isAdmin && (
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <button
@@ -341,7 +384,6 @@ export default function ProductionLines() {
         </div>
       )}
 
-      {/* Info note */}
       {lines.length > 0 && (
         <p className="text-xs text-muted-foreground/60 text-center pb-2">
           Production records, downtime, and OEE analytics are all linked to these lines.
@@ -367,16 +409,29 @@ function LineForm({
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {/* Name */}
       <div className="sm:col-span-2">
-        <label className={LABEL}>Line Name *</label>
-        <input className={INPUT} placeholder="e.g. Assembly Line 1" value={form.name} onChange={set("name")} />
+        <label className={LABEL}>Line / Station Name *</label>
+        <input
+          className={INPUT}
+          placeholder='e.g. "Machine 1 Stamping", "Enamel Cleaning", "Assembly Line 1"'
+          value={form.name}
+          onChange={set("name")}
+          autoFocus
+        />
       </div>
 
-      {/* Team */}
+      {/* Team — free-form with suggestions */}
       <div>
-        <label className={LABEL}>Department / Team</label>
-        <select className={SELECT} value={form.team} onChange={set("team")}>
-          {TEAM_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        <label className={LABEL}>Zone / Category <span className="text-muted-foreground/50 font-normal">(optional — type anything)</span></label>
+        <input
+          className={INPUT}
+          list="team-suggestions"
+          placeholder="e.g. Stamping, Enamel, Assembly…"
+          value={form.team}
+          onChange={set("team")}
+        />
+        <datalist id="team-suggestions">
+          {TEAM_SUGGESTIONS.map(s => <option key={s} value={s} />)}
+        </datalist>
       </div>
 
       {/* Supervisor */}
@@ -410,7 +465,7 @@ function LineForm({
       <div className="sm:col-span-2">
         <label className={LABEL}>Description (optional)</label>
         <textarea
-          className={INPUT} rows={2} placeholder="Notes about this line…"
+          className={INPUT} rows={2} placeholder="Notes about this line or station…"
           value={form.description} onChange={set("description")}
         />
       </div>
