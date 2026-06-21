@@ -282,7 +282,7 @@ export default function Tasks() {
                         <Pencil size={10} /> {t("common.edit")}
                       </button>
                     )}
-                    {isAdmin && (
+                    {canEdit && (
                       <button onClick={() => handleDeleteTask(task)} style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", color: "hsl(0 60% 55%)", background: "hsl(0 60% 10%)", border: "1px solid hsl(0 60% 20%)", borderRadius: "6px", padding: "3px 8px", cursor: "pointer" }}>
                         <Trash2 size={10} />
                       </button>
@@ -366,7 +366,7 @@ export default function Tasks() {
                               <CheckCircle2 className="w-3.5 h-3.5" />{t("tasks.markComplete")}
                             </Button>
                           )}
-                          {isAdmin && (
+                          {canEdit && (
                             <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 border border-white/10 hover:border-red-500/30" onClick={() => handleDeleteTask(tk)}>
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
