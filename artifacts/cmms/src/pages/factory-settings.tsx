@@ -48,15 +48,18 @@ const SECTIONS = [
   { key: "production",      label: "Production" },
   { key: "tasks",           label: "Tasks" },
   { key: "linePlans",       label: "Line Plans" },
+  { key: "changeover",      label: "Changeover" },
   { key: "attendance",      label: "Attendance" },
   { key: "vacation",        label: "Vacation Requests" },
   { key: "machines",        label: "Machine Registry" },
   { key: "workPhones",      label: "Work Phones" },
   { key: "brokenMachines",  label: "Broken Machines" },
+  { key: "defects",         label: "Defects Log" },
   { key: "machineMonitor",  label: "Machine Monitor" },
   { key: "machineAnalysis", label: "Machine Analysis" },
   { key: "exams",           label: "Exams" },
   { key: "kpi",             label: "KPI" },
+  { key: "reports",         label: "Analytics & Reports" },
 ] as const;
 
 const NAV_ITEMS_FOR_VISIBILITY = [
