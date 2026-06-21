@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { factoryConfigTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
-import { getCurrentUser } from "../lib/current-user.js";
+import { factoryConfigTable, tasksTable, pmPlansTable } from "@workspace/db/schema";
+import { eq, and, inArray, sql } from "drizzle-orm";
+import { getCurrentUser, isAdmin as checkAdmin } from "../lib/current-user.js";
 import { logAudit } from "../lib/audit.js";
 import { randomBytes } from "crypto";
 
@@ -25,6 +25,21 @@ async function getOrCreateConfig() {
   return created;
 }
 
+/** Returns the next working day after `dateStr` that isn't a holiday or weekend */
+function nextWorkingDay(dateStr: string, holidays: string[]): string {
+  const holidaySet = new Set(holidays);
+  const d = new Date(dateStr + "T12:00:00Z"); // noon UTC to avoid DST issues
+  d.setUTCDate(d.getUTCDate() + 1);
+  while (
+    d.getUTCDay() === 0 || // Sunday
+    d.getUTCDay() === 6 || // Saturday
+    holidaySet.has(d.toISOString().split("T")[0])
+  ) {
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return d.toISOString().split("T")[0];
+}
+
 router.get("/", async (req, res) => {
   const user = await getCurrentUser(req);
   if (!user) return res.status(401).json({ error: "Unauthorized" });
@@ -44,6 +59,7 @@ router.get("/", async (req, res) => {
     omtpPathTemplate:      cfg.omtpPathTemplate ?? null,
     omtpColumns:           cfg.omtpColumns ?? null,
     downtimeFailThreshold: cfg.downtimeFailThreshold ?? 3,
+    holidays:              (cfg as any).holidays ?? [],
   });
 });
 
@@ -51,7 +67,7 @@ router.put("/", async (req, res) => {
   const user = await getCurrentUser(req);
   if (!user || user.role !== "admin") return res.status(403).json({ error: "Admin only" });
 
-  const { roleNames, sectionNames, sectionPerms, sectionVideos, hiddenSections, teamNames, systemName, factoryType, omtpPathTemplate, omtpColumns, downtimeFailThreshold } = req.body ?? {};
+  const { roleNames, sectionNames, sectionPerms, sectionVideos, hiddenSections, teamNames, systemName, factoryType, omtpPathTemplate, omtpColumns, downtimeFailThreshold, holidays } = req.body ?? {};
 
   const threshold = typeof downtimeFailThreshold === "number" && downtimeFailThreshold >= 1
     ? Math.round(downtimeFailThreshold) : undefined;
@@ -70,6 +86,7 @@ router.put("/", async (req, res) => {
       ...(omtpPathTemplate       !== undefined ? { omtpPathTemplate }       : {}),
       ...(omtpColumns            !== undefined ? { omtpColumns }            : {}),
       ...(threshold              !== undefined ? { downtimeFailThreshold: threshold } : {}),
+      ...(holidays               !== undefined ? { holidays: Array.isArray(holidays) ? holidays : [] } : {}),
     }).where(eq(factoryConfigTable.id, existing[0].id));
   } else {
     await db.insert(factoryConfigTable).values({
@@ -93,6 +110,72 @@ router.put("/", async (req, res) => {
   await logAudit(user, "update", "FactoryConfig", null, "Factory Configuration", { updatedFields: changedFields });
 
   res.json({ ok: true });
+});
+
+/* Delay all pending tasks + active PM plans from a holiday date to next working day */
+router.post("/delay-tasks", async (req, res) => {
+  const user = await getCurrentUser(req);
+  if (!user || user.role !== "admin") return res.status(403).json({ error: "Admin only" });
+
+  const { date } = req.body ?? {};
+  if (!date || typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return res.status(400).json({ error: "date (YYYY-MM-DD) is required" });
+  }
+
+  const cfg = await getOrCreateConfig();
+  const holidays = ((cfg as any).holidays ?? []) as string[];
+  const newDate = nextWorkingDay(date, holidays);
+  const newDateTs = new Date(newDate + "T00:00:00Z");
+
+  // Delay tasks: all non-completed, non-cancelled tasks with due_date on the given date
+  const taskResult = await db.execute(
+    sql`UPDATE tasks SET due_date = ${newDateTs}
+        WHERE DATE(due_date AT TIME ZONE 'UTC') = ${date}::date
+          AND status NOT IN ('completed', 'cancelled')`
+  );
+
+  // Delay PM plans: all active plans with next_due_date on the given date
+  const pmResult = await db.execute(
+    sql`UPDATE pm_plans SET next_due_date = ${newDateTs}
+        WHERE DATE(next_due_date AT TIME ZONE 'UTC') = ${date}::date
+          AND status NOT IN ('completed', 'paused')`
+  );
+
+  const tasksDelayed = (taskResult as any).rowCount ?? 0;
+  const pmDelayed   = (pmResult as any).rowCount ?? 0;
+
+  await logAudit(user, "update", "FactoryConfig", null, `Holiday delay: ${date} → ${newDate}`, {
+    date, newDate, tasksDelayed, pmDelayed,
+  });
+
+  res.json({ ok: true, date, newDate, tasksDelayed, pmDelayed });
+});
+
+/* Preview how many tasks/PM plans fall on a holiday date (without modifying anything) */
+router.get("/delay-tasks/preview", async (req, res) => {
+  const user = await getCurrentUser(req);
+  if (!user || user.role !== "admin") return res.status(403).json({ error: "Admin only" });
+
+  const { date } = req.query as { date?: string };
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return res.status(400).json({ error: "date (YYYY-MM-DD) query param required" });
+  }
+
+  const taskResult = await db.execute(
+    sql`SELECT COUNT(*) AS cnt FROM tasks
+        WHERE DATE(due_date AT TIME ZONE 'UTC') = ${date}::date
+          AND status NOT IN ('completed', 'cancelled')`
+  );
+  const pmResult = await db.execute(
+    sql`SELECT COUNT(*) AS cnt FROM pm_plans
+        WHERE DATE(next_due_date AT TIME ZONE 'UTC') = ${date}::date
+          AND status NOT IN ('completed', 'paused')`
+  );
+
+  res.json({
+    tasksAffected: Number((taskResult as any).rows?.[0]?.cnt ?? 0),
+    pmAffected:    Number((pmResult   as any).rows?.[0]?.cnt ?? 0),
+  });
 });
 
 /* Set or clear a video URL for one section */

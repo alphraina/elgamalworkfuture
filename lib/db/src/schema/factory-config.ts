@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, jsonb, text } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, jsonb, text, boolean } from "drizzle-orm/pg-core";
 
 export interface SectionPerm {
   canSee: boolean;
@@ -29,6 +29,7 @@ export const factoryConfigTable = pgTable("factory_config", {
   omtpPathTemplate: text("omtp_path_template"),
   omtpColumns: jsonb("omtp_columns").$type<OmtpColumnMap>(),
   downtimeFailThreshold: integer("downtime_fail_threshold").default(3),
+  holidays: jsonb("holidays").$type<string[]>(),
 });
 
 export type FactoryConfig = typeof factoryConfigTable.$inferSelect;

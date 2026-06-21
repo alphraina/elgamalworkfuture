@@ -29,6 +29,17 @@ async function apiPost(path: string) {
   return r.json();
 }
 
+async function apiPostJson(path: string, body: unknown) {
+  const r = await fetch(`${BASE}/api${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || "Request failed"); }
+  return r.json();
+}
+
 const ROLE_KEYS = ["admin", "manager", "teamleader", "maintenance", "inventory"] as const;
 const ROLE_DEFAULTS: Record<string, string> = {
   admin: "Admin",
@@ -98,7 +109,7 @@ const DEFAULT_TEAMS = [
   { key: "packaging", label: "Packaging" },
 ];
 
-type Tab = "names" | "access" | "integration" | "backup" | "diagnostics";
+type Tab = "names" | "access" | "holidays" | "integration" | "backup" | "diagnostics";
 
 interface DiagCheck {
   id: string;
@@ -434,6 +445,15 @@ export default function FactorySettings() {
   const [rawHeaders, setRawHeaders] = useState("");
   const [downtimeFailThreshold, setDowntimeFailThreshold] = useState(3);
 
+  // Holidays / day-off state
+  const [holidays, setHolidays] = useState<string[]>([]);
+  const [newHolidayDate, setNewHolidayDate] = useState("");
+  const [newHolidayLabel, setNewHolidayLabel] = useState("");
+  const [delayResults, setDelayResults] = useState<Record<string, { tasksDelayed: number; pmDelayed: number; newDate: string } | null>>({});
+  const [delayingDate, setDelayingDate] = useState<string | null>(null);
+  const [previewCounts, setPreviewCounts] = useState<Record<string, { tasksAffected: number; pmAffected: number } | null>>({});
+  const [holidaySaved, setHolidaySaved] = useState(false);
+
   // ── Backup & Restore state ─────────────────────────────────────────────────
   const [backingUp, setBackingUp] = useState(false);
   const [restoreFile, setRestoreFile] = useState<File | null>(null);
@@ -488,6 +508,7 @@ export default function FactorySettings() {
       setOmtpPath(c.omtpPathTemplate ?? DEFAULT_OMTP_PATH);
       setOmtpColumns(c.omtpColumns ?? { ...DEFAULT_OMTP_COLUMNS });
       setDowntimeFailThreshold(c.downtimeFailThreshold ?? 3);
+      setHolidays(c.holidays ?? []);
     }
   }, [cfg]);
 
@@ -500,6 +521,55 @@ export default function FactorySettings() {
       setTimeout(() => setSaved(false), 2000);
     },
   });
+
+  const saveHolidays = async () => {
+    await apiPut("/factory-config", { holidays } as any);
+    qc.invalidateQueries({ queryKey: ["factory-config"] });
+    setHolidaySaved(true);
+    setTimeout(() => setHolidaySaved(false), 2000);
+  };
+
+  const addHoliday = () => {
+    if (!newHolidayDate) return;
+    const entry = newHolidayLabel.trim() ? `${newHolidayDate}|${newHolidayLabel.trim()}` : newHolidayDate;
+    if (!holidays.includes(entry) && !holidays.some(h => h.startsWith(newHolidayDate))) {
+      setHolidays(prev => [...prev, entry].sort());
+    }
+    setNewHolidayDate("");
+    setNewHolidayLabel("");
+  };
+
+  const removeHoliday = (h: string) => {
+    setHolidays(prev => prev.filter(x => x !== h));
+    const dateKey = h.split("|")[0];
+    setDelayResults(prev => { const n = { ...prev }; delete n[dateKey]; return n; });
+    setPreviewCounts(prev => { const n = { ...prev }; delete n[dateKey]; return n; });
+  };
+
+  const getHolidayDate = (h: string) => h.split("|")[0];
+  const getHolidayLabel = (h: string) => h.includes("|") ? h.split("|").slice(1).join("|") : "";
+
+  const previewHoliday = async (h: string) => {
+    const date = getHolidayDate(h);
+    try {
+      const data = await apiFetch(`/factory-config/delay-tasks/preview?date=${date}`);
+      setPreviewCounts(prev => ({ ...prev, [date]: data }));
+    } catch {}
+  };
+
+  const delayHoliday = async (h: string) => {
+    const date = getHolidayDate(h);
+    setDelayingDate(date);
+    try {
+      const data = await apiPostJson("/factory-config/delay-tasks", { date });
+      setDelayResults(prev => ({ ...prev, [date]: data }));
+      setPreviewCounts(prev => ({ ...prev, [date]: { tasksAffected: 0, pmAffected: 0 } }));
+    } catch (e: any) {
+      alert(e.message);
+    } finally {
+      setDelayingDate(null);
+    }
+  };
 
   const save = () => mutation.mutate({
     roleNames, sectionNames, sectionPerms,
@@ -546,11 +616,12 @@ export default function FactorySettings() {
   }
 
   const navItems: { key: Tab; label: string; desc: string; icon: typeof Settings2; color: string; iconBg: string }[] = [
-    { key: "names",       label: "Labels & Names",    desc: "Roles & section display names", icon: Users2,      color: "text-blue-400",    iconBg: "bg-blue-500/15 border-blue-500/20" },
+    { key: "names",       label: "Labels & Names",    desc: "Roles & section display names", icon: Users2,       color: "text-blue-400",    iconBg: "bg-blue-500/15 border-blue-500/20" },
     { key: "access",      label: "Access Control",    desc: "Section visibility & write permissions", icon: Shield, color: "text-violet-400", iconBg: "bg-violet-500/15 border-violet-500/20" },
-    { key: "integration", label: "OMTP Integration",  desc: "Machine data pipeline & scripts", icon: Terminal,   color: "text-emerald-400", iconBg: "bg-emerald-500/15 border-emerald-500/20" },
-    { key: "backup",      label: "Backup & Restore",  desc: "Data safety & recovery", icon: HardDrive,  color: "text-amber-400",   iconBg: "bg-amber-500/15 border-amber-500/20" },
-    { key: "diagnostics", label: "Diagnostics",       desc: "System health & AI analysis", icon: Activity,  color: "text-rose-400",    iconBg: "bg-rose-500/15 border-rose-500/20" },
+    { key: "holidays",    label: "Holidays & Days Off", desc: "Auto-delay tasks on closed days", icon: CalendarClock, color: "text-orange-400", iconBg: "bg-orange-500/15 border-orange-500/20" },
+    { key: "integration", label: "OMTP Integration",  desc: "Machine data pipeline & scripts", icon: Terminal,    color: "text-emerald-400", iconBg: "bg-emerald-500/15 border-emerald-500/20" },
+    { key: "backup",      label: "Backup & Restore",  desc: "Data safety & recovery", icon: HardDrive,     color: "text-amber-400",   iconBg: "bg-amber-500/15 border-amber-500/20" },
+    { key: "diagnostics", label: "Diagnostics",       desc: "System health & AI analysis", icon: Activity,   color: "text-rose-400",    iconBg: "bg-rose-500/15 border-rose-500/20" },
   ];
 
   // ── Diagnostics helpers (defined inside return to access scanResult scope) ──
@@ -575,6 +646,7 @@ export default function FactorySettings() {
   const hoursUntilBackup = Math.round((nextMidnight.getTime() - Date.now()) / 3600000);
 
   const showSaveBar = activeTab === "names" || activeTab === "access" || activeTab === "integration";
+  const today = new Date().toISOString().split("T")[0];
 
   return (
     <div className="max-w-6xl space-y-5">
@@ -956,6 +1028,174 @@ export default function FactorySettings() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* ══ Tab: Holidays & Days Off ═════════════════════════════════════ */}
+          {activeTab === "holidays" && (
+            <div className="space-y-4">
+              {/* Header card */}
+              <div className="rounded-xl border border-white/10 bg-card overflow-hidden">
+                <div className="px-5 py-4 border-b border-white/8 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-orange-500/15 border border-orange-500/20 flex items-center justify-center flex-shrink-0">
+                      <CalendarClock className="w-3.5 h-3.5 text-orange-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-white leading-none">Factory Holidays & Days Off</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">Mark factory-wide closed days. Then delay any tasks or PM plans due on those days to the next working day.</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={saveHolidays}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all flex-shrink-0 ${
+                      holidaySaved
+                        ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        : "bg-primary text-white hover:bg-primary/90 border border-primary/40"
+                    }`}
+                  >
+                    <Save className="w-4 h-4" />
+                    {holidaySaved ? "Saved!" : "Save Holidays"}
+                  </button>
+                </div>
+
+                {/* Add new holiday */}
+                <div className="px-5 py-4 border-b border-white/8 bg-white/2">
+                  <p className="text-xs font-medium text-muted-foreground mb-3 uppercase tracking-wider">Add Holiday / Day Off</p>
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs text-muted-foreground">Date *</label>
+                      <input
+                        type="date"
+                        value={newHolidayDate}
+                        min={today}
+                        onChange={e => setNewHolidayDate(e.target.value)}
+                        className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500/50 focus:border-orange-500/40 transition-colors"
+                      />
+                    </div>
+                    <div className="space-y-1.5 flex-1 min-w-[160px]">
+                      <label className="text-xs text-muted-foreground">Label (optional)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Eid Al-Fitr, National Day…"
+                        value={newHolidayLabel}
+                        onChange={e => setNewHolidayLabel(e.target.value)}
+                        onKeyDown={e => e.key === "Enter" && addHoliday()}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-orange-500/50 focus:border-orange-500/40 transition-colors"
+                      />
+                    </div>
+                    <button
+                      onClick={addHoliday}
+                      disabled={!newHolidayDate}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-500/15 border border-orange-500/30 text-orange-400 hover:bg-orange-500/25 transition-colors text-sm font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <Plus className="w-4 h-4" /> Add
+                    </button>
+                  </div>
+                </div>
+
+                {/* Holidays list */}
+                {holidays.length === 0 ? (
+                  <div className="px-5 py-10 text-center">
+                    <CalendarClock className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">No holidays added yet.</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">Add a date above to get started.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-white/5">
+                    {holidays.map(h => {
+                      const date = getHolidayDate(h);
+                      const label = getHolidayLabel(h);
+                      const result = delayResults[date];
+                      const preview = previewCounts[date];
+                      const isDelaying = delayingDate === date;
+                      const isPast = date < today;
+                      const formattedDate = new Date(date + "T12:00:00").toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
+                      return (
+                        <div key={h} className={`px-5 py-4 ${isPast ? "opacity-60" : ""}`}>
+                          <div className="flex items-start gap-4">
+                            {/* Date info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-semibold text-white font-mono">{date}</span>
+                                {label && <span className="text-xs bg-orange-500/15 border border-orange-500/25 text-orange-300 px-2 py-0.5 rounded">{label}</span>}
+                                {isPast && <span className="text-[10px] bg-white/5 border border-white/10 text-muted-foreground px-1.5 py-0.5 rounded">Past</span>}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">{formattedDate}</p>
+
+                              {/* Preview counts */}
+                              {preview && (
+                                <div className="mt-2 flex items-center gap-3">
+                                  <span className={`text-xs px-2 py-0.5 rounded border ${preview.tasksAffected > 0 ? "bg-blue-500/10 border-blue-500/20 text-blue-300" : "bg-white/5 border-white/10 text-muted-foreground"}`}>
+                                    {preview.tasksAffected} task{preview.tasksAffected !== 1 ? "s" : ""} affected
+                                  </span>
+                                  <span className={`text-xs px-2 py-0.5 rounded border ${preview.pmAffected > 0 ? "bg-violet-500/10 border-violet-500/20 text-violet-300" : "bg-white/5 border-white/10 text-muted-foreground"}`}>
+                                    {preview.pmAffected} PM plan{preview.pmAffected !== 1 ? "s" : ""} affected
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Delay result feedback */}
+                              {result && (
+                                <div className="mt-2 flex items-center gap-2 text-xs text-emerald-400">
+                                  <Check className="w-3.5 h-3.5" />
+                                  Delayed {result.tasksDelayed} task{result.tasksDelayed !== 1 ? "s" : ""} + {result.pmDelayed} PM plan{result.pmDelayed !== 1 ? "s" : ""} → {result.newDate}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Action buttons */}
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              {!result && (
+                                <button
+                                  onClick={() => previewHoliday(h)}
+                                  className="text-xs px-3 py-1.5 rounded-lg border border-white/10 text-muted-foreground hover:text-white hover:border-white/20 hover:bg-white/5 transition-colors flex items-center gap-1.5"
+                                >
+                                  <Eye className="w-3.5 h-3.5" /> Preview
+                                </button>
+                              )}
+                              {!result && (
+                                <button
+                                  onClick={() => {
+                                    const count = (preview?.tasksAffected ?? 0) + (preview?.pmAffected ?? 0);
+                                    const msg = count > 0
+                                      ? `This will delay ${preview!.tasksAffected} task(s) and ${preview!.pmAffected} PM plan(s) from ${date} to the next working day. Continue?`
+                                      : `Delay all tasks and PM plans due on ${date} to the next working day?`;
+                                    if (!confirm(msg)) return;
+                                    delayHoliday(h);
+                                  }}
+                                  disabled={isDelaying}
+                                  className="text-xs px-3 py-1.5 rounded-lg border border-orange-500/30 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                                >
+                                  {isDelaying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                                  {isDelaying ? "Delaying…" : "Delay Tasks"}
+                                </button>
+                              )}
+                              <button
+                                onClick={() => removeHoliday(h)}
+                                className="p-1.5 rounded-lg border border-white/10 text-muted-foreground hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 transition-colors"
+                                title="Remove holiday"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Info callout */}
+              <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 px-5 py-4 flex gap-3">
+                <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                <div className="text-xs text-blue-300/80 space-y-1">
+                  <p><strong className="text-blue-300">How it works:</strong> Save your holiday list first, then click <em>Preview</em> to see how many tasks are affected, and <em>Delay Tasks</em> to push them to the next working day (skipping weekends and other saved holidays).</p>
+                  <p>Only <strong className="text-blue-300">pending / in-progress tasks</strong> and <strong className="text-blue-300">active PM plans</strong> are moved — completed and cancelled records are untouched.</p>
+                </div>
               </div>
             </div>
           )}
