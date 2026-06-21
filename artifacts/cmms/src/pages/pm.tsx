@@ -3,11 +3,12 @@ import {
   useGetPreventiveMaintenancePlans,
   useCreatePreventiveMaintenancePlan,
   useUpdatePMPlan,
+  useDeletePMPlan,
   useGetUsers,
   type CreatePMPlanRequestFrequency,
 } from "@workspace/api-client-react";
 import { Button, Input, Select, Modal, Label, Badge } from "@/components/ui";
-import { CalendarClock, ChevronLeft, ChevronRight, Users, X, LayoutGrid, CalendarDays, RefreshCw, CheckCircle2, Pencil } from "lucide-react";
+import { CalendarClock, ChevronLeft, ChevronRight, Users, X, LayoutGrid, CalendarDays, RefreshCw, CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { CylinderProgress } from "@/components/cylinder-progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -62,6 +63,7 @@ export default function PM() {
   const { data: allUsers } = useGetUsers();
   const createMutation = useCreatePreventiveMaintenancePlan();
   const updateMutation = useUpdatePMPlan();
+  const deleteMutation = useDeletePMPlan();
   const { toast } = useToast();
   const { isMaintenance, isAdmin, isManager, isTeamLeader, user } = useAuth();
 
@@ -92,6 +94,16 @@ export default function PM() {
     { value: "test", label: t("teams.test") },
     { value: "packaging", label: t("teams.packaging") },
   ] as const;
+
+  const handleDeletePlan = async (p: any) => {
+    if (!confirm(`Delete PM plan "${p.title}"? This cannot be undone.`)) return;
+    try {
+      await deleteMutation.mutateAsync({ id: p.id });
+      toast({ title: "PM plan deleted" });
+    } catch (err: any) {
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
+    }
+  };
 
   const handleEditOpen = (p: any) => {
     setEditTarget(p);
@@ -351,19 +363,34 @@ export default function PM() {
                       color: plan.status === "completed" ? "#4ade80" : plan.status === "active" ? "#60a5fa" : plan.status === "paused" ? "#fb923c" : "#f87171",
                     }}>{plan.status}</span>
                   </div>
-                  {canEditTasks && (
-                    <button
-                      onClick={() => handleEditOpen(plan)}
-                      style={{
-                        marginTop: "8px", display: "flex", alignItems: "center", gap: "4px",
-                        fontSize: "10px", color: "hsl(222 16% 55%)", background: "hsl(222 16% 12%)",
-                        border: "1px solid hsl(222 16% 20%)", borderRadius: "6px", padding: "3px 8px",
-                        cursor: "pointer", transition: "all 0.15s",
-                      }}
-                    >
-                      <Pencil size={10} /> {t("common.edit")}
-                    </button>
-                  )}
+                  <div style={{ display: "flex", gap: "4px", marginTop: "8px", justifyContent: "center" }}>
+                    {canEditTasks && (
+                      <button
+                        onClick={() => handleEditOpen(plan)}
+                        style={{
+                          display: "flex", alignItems: "center", gap: "4px",
+                          fontSize: "10px", color: "hsl(222 16% 55%)", background: "hsl(222 16% 12%)",
+                          border: "1px solid hsl(222 16% 20%)", borderRadius: "6px", padding: "3px 8px",
+                          cursor: "pointer", transition: "all 0.15s",
+                        }}
+                      >
+                        <Pencil size={10} /> {t("common.edit")}
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleDeletePlan(plan)}
+                        style={{
+                          display: "flex", alignItems: "center", gap: "4px",
+                          fontSize: "10px", color: "hsl(0 60% 55%)", background: "hsl(0 60% 10%)",
+                          border: "1px solid hsl(0 60% 20%)", borderRadius: "6px", padding: "3px 8px",
+                          cursor: "pointer", transition: "all 0.15s",
+                        }}
+                      >
+                        <Trash2 size={10} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -528,6 +555,16 @@ export default function PM() {
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           {completingId === p.id ? "Saving…" : "Mark Done"}
+                        </Button>
+                      )}
+                      {isAdmin && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="gap-1.5 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 border border-white/10 hover:border-red-500/30 h-7 text-xs"
+                          onClick={(e) => { e.stopPropagation(); handleDeletePlan(p); }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       )}
                     </div>

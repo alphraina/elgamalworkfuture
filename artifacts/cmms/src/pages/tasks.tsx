@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { useGetTasks, useCreateTask, useUpdateTask, type CreateTaskRequestPriority, type CreateTaskRequestType } from "@workspace/api-client-react";
+import { useGetTasks, useCreateTask, useUpdateTask, useDeleteTask, type CreateTaskRequestPriority, type CreateTaskRequestType } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button, Input, Select, Card, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Badge, Modal, Label } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
-import { CheckSquare, CheckCircle2, LayoutGrid, LayoutList, Pencil } from "lucide-react";
+import { CheckSquare, CheckCircle2, LayoutGrid, LayoutList, Pencil, Trash2 } from "lucide-react";
 import { CylinderProgress } from "@/components/cylinder-progress";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -26,6 +26,7 @@ export default function Tasks() {
   const { data: tasks, isLoading } = useGetTasks();
   const createMutation = useCreateTask();
   const updateMutation = useUpdateTask();
+  const deleteMutation = useDeleteTask();
   const { toast } = useToast();
   const { user, isMaintenance, isTeamLeader, isManager, isAdmin } = useAuth();
   const queryClient = useQueryClient();
@@ -48,6 +49,16 @@ export default function Tasks() {
   const [editAssignedToId, setEditAssignedToId] = useState("");
   const [editFormTeam, setEditFormTeam] = useState("");
   const [editBusy, setEditBusy] = useState(false);
+
+  const handleDeleteTask = async (tk: any) => {
+    if (!confirm(`Delete task "${tk.title}"? This cannot be undone.`)) return;
+    try {
+      await deleteMutation.mutateAsync({ id: tk.id });
+      toast({ title: "Task deleted" });
+    } catch (err: any) {
+      toast({ title: t("common.error"), description: err.message, variant: "destructive" });
+    }
+  };
 
   const handleEditOpen = (tk: any) => {
     setEditTarget(tk);
@@ -265,11 +276,18 @@ export default function Tasks() {
                   <div style={{ marginTop: "6px" }}>
                     <span style={{ fontSize: "9px", padding: "2px 7px", borderRadius: "10px", fontWeight: 700, textTransform: "uppercase", background: bg, color }}>{task.status.replace("_"," ")}</span>
                   </div>
-                  {canEdit && (
-                    <button onClick={() => handleEditOpen(task)} style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", color: "hsl(222 16% 55%)", background: "hsl(222 16% 12%)", border: "1px solid hsl(222 16% 20%)", borderRadius: "6px", padding: "3px 8px", cursor: "pointer" }}>
-                      <Pencil size={10} /> {t("common.edit")}
-                    </button>
-                  )}
+                  <div style={{ display: "flex", gap: "4px", marginTop: "8px", justifyContent: "center" }}>
+                    {canEdit && (
+                      <button onClick={() => handleEditOpen(task)} style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", color: "hsl(222 16% 55%)", background: "hsl(222 16% 12%)", border: "1px solid hsl(222 16% 20%)", borderRadius: "6px", padding: "3px 8px", cursor: "pointer" }}>
+                        <Pencil size={10} /> {t("common.edit")}
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <button onClick={() => handleDeleteTask(task)} style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", color: "hsl(0 60% 55%)", background: "hsl(0 60% 10%)", border: "1px solid hsl(0 60% 20%)", borderRadius: "6px", padding: "3px 8px", cursor: "pointer" }}>
+                        <Trash2 size={10} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -346,6 +364,11 @@ export default function Tasks() {
                           {canComplete && (
                             <Button variant="ghost" size="sm" className="h-7 text-xs text-emerald-400 hover:text-emerald-300 hover:bg-emerald-400/10 gap-1" onClick={() => openCompleteModal({ id: tk.id, title: tk.title })}>
                               <CheckCircle2 className="w-3.5 h-3.5" />{t("tasks.markComplete")}
+                            </Button>
+                          )}
+                          {isAdmin && (
+                            <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground hover:text-red-400 hover:bg-red-500/10 border border-white/10 hover:border-red-500/30" onClick={() => handleDeleteTask(tk)}>
+                              <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           )}
                         </div>
